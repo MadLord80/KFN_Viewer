@@ -25,6 +25,9 @@ namespace KFN_Viewer
         private readonly OpenFileDialog OpenFileDialog = new OpenFileDialog();
         private string KFNFile;
         private KFN KFN = new KFN();
+        // 1251	Windows 1251
+        // 65001	UTF-8
+        private int filesEncoding = 65001;
 
         public MainWindow()
         {
@@ -32,6 +35,9 @@ namespace KFN_Viewer
 
             string version = System.Windows.Forms.Application.ProductVersion;
             MainWindowElement.Title += " v." + version.Remove(version.Length - 2);
+
+            // https://docs.microsoft.com/ru-ru/dotnet/api/system.text.encodinginfo.name?view=netframework-4.5
+            //FilesEncodingElement.ItemsSource = new 
         }
 
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
@@ -64,7 +70,11 @@ namespace KFN_Viewer
                 {
                     fs.Read(block, 0, block.Length);
                     string blockName = new string(Encoding.UTF8.GetChars(new ArraySegment<byte>(block, 0, 4).ToArray()));
-                    if (blockName == "ENDH") { break; }
+                    if (blockName == "ENDH")
+                    {
+                        fs.Position += 4;
+                        break;
+                    }
                     blockName = KFN.GetBlockDesc(blockName);
                     if (block[4] == 1)
                     {
@@ -84,6 +94,38 @@ namespace KFN_Viewer
                         return;
                     }
                     maxBlocks--;
+                }
+
+                byte[] numOfFiles = new byte[4];
+                fs.Read(numOfFiles, 0, numOfFiles.Length);
+                int filesCount = BitConverter.ToInt32(numOfFiles, 0);
+                PropertyWindow.Text += "Files (" + filesCount + "):\n";
+                while (filesCount > 0)
+                {
+                    byte[] fileNameLenght = new byte[4];
+                    byte[] fileType = new byte[4];
+                    byte[] fileLenght1 = new byte[4];
+                    byte[] fileLenght2 = new byte[4];
+                    byte[] fileOffset = new byte[4];
+                    byte[] fileEncrypted = new byte[4];
+
+                    fs.Read(fileNameLenght, 0, fileNameLenght.Length);
+                    byte[] fileName = new byte[BitConverter.ToUInt32(fileNameLenght, 0)];
+                    fs.Read(fileName, 0, fileName.Length);
+                    fs.Read(fileType, 0, fileType.Length);
+                    fs.Read(fileLenght1, 0, fileLenght1.Length);
+                    fs.Read(fileOffset, 0, fileOffset.Length);
+                    fs.Read(fileLenght2, 0, fileLenght2.Length);
+                    fs.Read(fileEncrypted, 0, fileEncrypted.Length);
+                    int encrypted = BitConverter.ToInt32(fileEncrypted, 0);
+
+                    PropertyWindow.Text += KFN.GetFileType(fileType) + ": "
+                        + new string(Encoding.UTF8.GetChars(fileName))
+                        + ", length1=" + BitConverter.ToUInt32(fileLenght1, 0)
+                        + ", length2=" + BitConverter.ToUInt32(fileLenght2, 0)
+                        + ", encrypted - " + ((encrypted == 1) ? "yes\n" : ((encrypted == 0) ? "no\n" : "unknown (" + encrypted + ")\n"));
+
+                    filesCount--;
                 }
             }
         }
