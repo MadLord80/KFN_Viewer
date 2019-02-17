@@ -7,12 +7,12 @@ using System.Windows;
 // Общие сведения об этой сборке предоставляются следующим набором
 // набора атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // общие сведения об этой сборке.
-[assembly: AssemblyTitle("KFN_Viewer")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("KFN Viewer")]
+[assembly: AssemblyDescription("Viewer for KFN (karafan) files")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("KFN_Viewer")]
-[assembly: AssemblyCopyright("Copyright ©  2019")]
+[assembly: AssemblyCompany("MadLord, 2019")]
+[assembly: AssemblyProduct("KFN Viewer")]
+[assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
