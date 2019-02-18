@@ -4,26 +4,28 @@ using System.Collections.Generic;
 public class KFN
 {
     private Dictionary<string, string> blocksDesc = new Dictionary<string, string>{
-        {"DIFM", "DIFM"},
-        {"DIFW", "DIFW"},
+        {"DIFM", "Man difficult"},
+        {"DIFW", "Woman difficult"},
         {"GNRE", "Genre"},
         {"SFTV", "SFTV"},
         {"MUSL", "MUSL"},
         {"ANME", "ANME"},
         {"TYPE", "TYPE"},
-        {"FLID", "FLID"},
+        {"FLID", "AES-ECB-128 Key"},
         {"TITL", "Title"},
         {"ARTS", "Artist"},
         {"ALBM", "Album"},
-        {"COMP", "COMP"},
+        {"COMP", "Composer"},
         {"SORC", "Source"},
         {"TRAK", "Track number"},
-        {"RGHT", "RGHT"},
+        {"RGHT", "Copyright"},
         {"PROV", "PROV"},
         {"IDUS", "IDUS"},
-        {"LANG", "Language"}
+        {"LANG", "Language"},
+        {"KFNZ", "KFN Author"}
     };
     private Dictionary<int, string> fileTypes = new Dictionary<int, string> {
+        {0, "Text"},
         {1, "Lyrics"},
         {2, "Audio"},
         {3, "Image"},
@@ -36,7 +38,7 @@ public class KFN
     public string GetBlockDesc(string BlockName)
     {
         if (blocksDesc.ContainsKey(BlockName)) { return blocksDesc[BlockName]; }
-        return BlockName + " (unknown)";
+        return "(unknown) " + BlockName;
     }
 
     public string GetFileType(byte[] type)

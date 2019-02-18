@@ -5,12 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KFN_Viewer"
         mc:Ignorable="d"
-        Title="KFN Viewer" Height="450" Width="800">
+        Title="KFN Viewer" Height="654.859" Width="800">
     <Grid>
-        <Button x:Name="OpenFileButton" Content="Open KFN file" HorizontalAlignment="Left" VerticalAlignment="Top" Width="133" Margin="10,10,0,0" Click="OpenFileButton_Click"/>
-        <TextBlock x:Name="PropertyWindow" HorizontalAlignment="Left" Margin="10,57,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="352" Width="690"/>
-        <Label Content="Files encoding:" HorizontalAlignment="Left" Margin="312,8,0,0" VerticalAlignment="Top" Width="88"/>
-        <ComboBox x:Name="FilesEncodingElement" HorizontalAlignment="Left" Margin="405,10,0,0" VerticalAlignment="Top" Width="120"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="7*"/>
+            <ColumnDefinition Width="37*"/>
+        </Grid.ColumnDefinitions>
+        <Button x:Name="OpenFileButton" Content="Open KFN file" HorizontalAlignment="Left" VerticalAlignment="Top" Width="133" Margin="10,10,0,0" Click="OpenFileButton_Click" Grid.ColumnSpan="2"/>
+        <TextBlock x:Name="PropertyWindow" HorizontalAlignment="Left" Margin="10,57,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="558" Width="690" Grid.ColumnSpan="2"/>
+        <Label Content="File names encoding:" HorizontalAlignment="Left" Margin="186,8,0,0" VerticalAlignment="Top" Width="124" Grid.Column="1"/>
+        <ComboBox x:Name="FilesEncodingElement" HorizontalAlignment="Left" Margin="315,12,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="FilesEncodingElement_SelectionChanged" Grid.Column="1"/>
 
     </Grid>
 </Window>

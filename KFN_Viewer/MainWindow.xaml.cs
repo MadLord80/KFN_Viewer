@@ -25,9 +25,13 @@ namespace KFN_Viewer
         private readonly OpenFileDialog OpenFileDialog = new OpenFileDialog();
         private string KFNFile;
         private KFN KFN = new KFN();
-        // 1251	Windows 1251
-        // 65001	UTF-8
         private int filesEncoding = 65001;
+        // https://docs.microsoft.com/ru-ru/dotnet/api/system.text.encodinginfo.name?view=netframework-4.5
+        private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
+        {
+            {65001, "utf-8"},
+            {1251,  "windows-1251"}
+        };
 
         public MainWindow()
         {
@@ -36,8 +40,9 @@ namespace KFN_Viewer
             string version = System.Windows.Forms.Application.ProductVersion;
             MainWindowElement.Title += " v." + version.Remove(version.Length - 2);
 
-            // https://docs.microsoft.com/ru-ru/dotnet/api/system.text.encodinginfo.name?view=netframework-4.5
-            //FilesEncodingElement.ItemsSource = new 
+            FilesEncodingElement.DisplayMemberPath = "Value";
+            FilesEncodingElement.ItemsSource = encodings;
+            FilesEncodingElement.SelectedIndex = 0;
         }
 
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
@@ -86,7 +91,17 @@ namespace KFN_Viewer
                         fs.Read(blockValue, 0, blockValue.Length);
                         byte[] value = new byte[BitConverter.ToUInt32(blockValue, 0)];
                         fs.Read(value, 0, value.Length);
-                        PropertyWindow.Text += blockName + ": " + new string(Encoding.UTF8.GetChars(value)) + "\n";
+                        if (blockName == "AES-ECB-128 Key")
+                        {
+                            string val = (value.Select(b => (int)b).Sum() == 0) 
+                                ? "Not present" 
+                                : value.Select(b => b.ToString("X2")).Aggregate((s1, s2) => s1 + s2);
+                            PropertyWindow.Text += blockName + ": " + val + "\n";
+                        }
+                        else
+                        {
+                            PropertyWindow.Text += blockName + ": " + new string(Encoding.UTF8.GetChars(value)) + "\n";
+                        }
                     }
                     else
                     {
@@ -120,7 +135,7 @@ namespace KFN_Viewer
                     int encrypted = BitConverter.ToInt32(fileEncrypted, 0);
 
                     PropertyWindow.Text += KFN.GetFileType(fileType) + ": "
-                        + new string(Encoding.UTF8.GetChars(fileName))
+                        + new string(Encoding.GetEncoding(filesEncoding).GetChars(fileName))
                         + ", length1=" + BitConverter.ToUInt32(fileLenght1, 0)
                         + ", length2=" + BitConverter.ToUInt32(fileLenght2, 0)
                         + ", encrypted - " + ((encrypted == 1) ? "yes\n" : ((encrypted == 0) ? "no\n" : "unknown (" + encrypted + ")\n"));
@@ -128,6 +143,13 @@ namespace KFN_Viewer
                     filesCount--;
                 }
             }
+        }
+
+        private void FilesEncodingElement_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            KeyValuePair<int, string> selectedEncoding = (KeyValuePair<int, string>)FilesEncodingElement.SelectedItem;
+            filesEncoding = selectedEncoding.Key;
+            if (KFNFile != null) { ReadFile(); }
         }
     }
 }
