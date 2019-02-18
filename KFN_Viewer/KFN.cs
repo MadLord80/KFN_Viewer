@@ -18,11 +18,16 @@ public class KFN
         {"COMP", "Composer"},
         {"SORC", "Source"},
         {"TRAK", "Track number"},
-        {"RGHT", "Copyright"},
+        {"RGHT", "RGHT"},
+        {"COPY", "Copyright"},
+        {"COMM", "Comment"},
         {"PROV", "PROV"},
         {"IDUS", "IDUS"},
         {"LANG", "Language"},
-        {"KFNZ", "KFN Author"}
+        {"KFNZ", "KFN Author"},
+        {"YEAR", "Year"},
+        {"KARV", "Karaoke version"},
+        {"VOCG", "Lead vocal"}
     };
     private Dictionary<int, string> fileTypes = new Dictionary<int, string> {
         {0, "Text"},

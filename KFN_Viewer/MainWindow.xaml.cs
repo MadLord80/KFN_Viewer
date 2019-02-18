@@ -63,7 +63,7 @@ namespace KFN_Viewer
 
                 byte[] block = new byte[5];
                 byte[] blockValue = new byte[4];
-                int maxBlocks = 20;
+                int maxBlocks = 40;
                 while (maxBlocks > 0)
                 {
                     fs.Read(block, 0, block.Length);
@@ -77,6 +77,11 @@ namespace KFN_Viewer
                     if (block[4] == 1)
                     {
                         fs.Read(blockValue, 0, blockValue.Length);
+                        if (blockName == "Genre" && BitConverter.ToUInt32(blockValue, 0) == 0xffffffff)
+                        {
+                            maxBlocks--;
+                            continue;
+                        }
                         PropertyWindow.Text += blockName + ": " + BitConverter.ToUInt32(blockValue, 0) + "\n";
                     }
                     else if (block[4] == 2)
