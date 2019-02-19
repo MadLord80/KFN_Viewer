@@ -16,8 +16,13 @@ namespace KFN_Viewer
     public partial class MainWindow : Window
     {
         private readonly OpenFileDialog OpenFileDialog = new OpenFileDialog();
+        private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
         private string KFNFile;
         private KFN KFN = new KFN();
+        private List<KFN.ResorceFile> resources = new List<KFN.ResorceFile>();
+        private Dictionary<string, string> properties = new Dictionary<string, string>();
+        private long endOfHeaderOffset;
+
         private int filesEncoding = 65001;
         // https://docs.microsoft.com/ru-ru/dotnet/api/system.text.encodinginfo.name?view=netframework-4.5
         private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
@@ -36,6 +41,8 @@ namespace KFN_Viewer
             FilesEncodingElement.DisplayMemberPath = "Value";
             FilesEncodingElement.ItemsSource = encodings;
             FilesEncodingElement.SelectedIndex = 0;
+
+            OpenFileDialog.Filter = "KFN files (*.kfn)|*.kfn|All files (*.*)|*.*";
         }
 
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
@@ -49,7 +56,14 @@ namespace KFN_Viewer
 
         private void ReadFile()
         {
-            PropertyWindow.Text = "File: " + KFNFile + "\nHeader blocks:\n";
+            propertiesView.ItemsSource = null;
+            properties.Clear();
+            resourcesView.ItemsSource = null;
+            resources.Clear();
+
+            fileNameLabel.Content = "KFN file: " + KFNFile;
+            //PropertyWindow.Text = "File: " + KFNFile + "\nHeader blocks:\n";
+
             using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
             {
                 byte[] signature = new byte[4];
@@ -61,64 +75,84 @@ namespace KFN_Viewer
                     return;
                 }
 
-                byte[] block = new byte[5];
-                byte[] blockValue = new byte[4];
-                int maxBlocks = 40;
-                while (maxBlocks > 0)
+                byte[] prop = new byte[5];
+                byte[] propValue = new byte[4];
+                int maxProps = 40;
+                while (maxProps > 0)
                 {
-                    fs.Read(block, 0, block.Length);
-                    string blockName = new string(Encoding.UTF8.GetChars(new ArraySegment<byte>(block, 0, 4).ToArray()));
-                    if (blockName == "ENDH")
+                    fs.Read(prop, 0, prop.Length);
+                    string propName = new string(Encoding.UTF8.GetChars(new ArraySegment<byte>(prop, 0, 4).ToArray()));
+                    if (propName == "ENDH")
                     {
                         fs.Position += 4;
                         break;
                     }
-                    blockName = KFN.GetBlockDesc(blockName);
-                    if (block[4] == 1)
+                    string SpropName = KFN.GetPropDesc(propName);
+                    if (prop[4] == 1)
                     {
-                        fs.Read(blockValue, 0, blockValue.Length);
-                        if (blockName == "Genre" && BitConverter.ToUInt32(blockValue, 0) == 0xffffffff)
+                        fs.Read(propValue, 0, propValue.Length);
+                        if (SpropName == "Genre" && BitConverter.ToUInt32(propValue, 0) == 0xffffffff)
                         {
-                            maxBlocks--;
-                            continue;
+                            //PropertyWindow.Text += SpropName + ": Not set\n";
+                            properties.Add(SpropName, "Not set");
                         }
-                        PropertyWindow.Text += blockName + ": " + BitConverter.ToUInt32(blockValue, 0) + "\n";
+                        else
+                        {
+                            if (SpropName.Contains("unknown"))
+                            {
+                                PropertyWindow.Text += SpropName + ": " + BitConverter.ToUInt32(propValue, 0) + "\n";
+                            }                            
+                            if (propName != SpropName)
+                            {
+                                properties.Add(SpropName, BitConverter.ToUInt32(propValue, 0).ToString());
+                            }
+                        }                        
                     }
-                    else if (block[4] == 2)
+                    else if (prop[4] == 2)
                     {
-                        fs.Read(blockValue, 0, blockValue.Length);
-                        byte[] value = new byte[BitConverter.ToUInt32(blockValue, 0)];
+                        fs.Read(propValue, 0, propValue.Length);
+                        byte[] value = new byte[BitConverter.ToUInt32(propValue, 0)];
                         fs.Read(value, 0, value.Length);
-                        if (blockName == "AES-ECB-128 Key")
+                        if (SpropName == "AES-ECB-128 Key")
                         {
                             string val = (value.Select(b => (int)b).Sum() == 0) 
                                 ? "Not present" 
                                 : value.Select(b => b.ToString("X2")).Aggregate((s1, s2) => s1 + s2);
-                            PropertyWindow.Text += blockName + ": " + val + "\n";
+                            //PropertyWindow.Text += SpropName + ": " + val + "\n";
+                            properties.Add(SpropName, val);
                         }
                         else
                         {
-                            PropertyWindow.Text += blockName + ": " + new string(Encoding.UTF8.GetChars(value)) + "\n";
+                            if (SpropName.Contains("unknown"))
+                            {
+                                PropertyWindow.Text += SpropName + ": " + new string(Encoding.UTF8.GetChars(value)) + "\n";
+                            }                            
+                            if (propName != SpropName)
+                            {
+                                properties.Add(SpropName, new string(Encoding.UTF8.GetChars(value)));
+                            }
                         }
                     }
                     else
                     {
-                        PropertyWindow.Text += blockName + ": unknown block type - " + block[4] + "!\n";
+                        PropertyWindow.Text += SpropName + ": unknown block type - " + prop[4] + "!\n";
+                        properties.Add(SpropName, "unknown block type - " + prop[4]);
                         return;
                     }
-                    maxBlocks--;
+                    maxProps--;
                 }
+                propertiesView.ItemsSource = properties;
 
                 byte[] numOfFiles = new byte[4];
                 fs.Read(numOfFiles, 0, numOfFiles.Length);
                 int filesCount = BitConverter.ToInt32(numOfFiles, 0);
-                PropertyWindow.Text += "Files (" + filesCount + "):\n";
+                //PropertyWindow.Text += "Files (" + filesCount + "):\n";
                 while (filesCount > 0)
                 {
                     byte[] fileNameLenght = new byte[4];
                     byte[] fileType = new byte[4];
-                    byte[] fileLenght1 = new byte[4];
-                    byte[] fileLenght2 = new byte[4];
+                    byte[] fileLenght = new byte[4];
+                    byte[] fileEncryptedLenght = new byte[4];
                     byte[] fileOffset = new byte[4];
                     byte[] fileEncrypted = new byte[4];
 
@@ -126,20 +160,31 @@ namespace KFN_Viewer
                     byte[] fileName = new byte[BitConverter.ToUInt32(fileNameLenght, 0)];
                     fs.Read(fileName, 0, fileName.Length);
                     fs.Read(fileType, 0, fileType.Length);
-                    fs.Read(fileLenght1, 0, fileLenght1.Length);
+                    fs.Read(fileLenght, 0, fileLenght.Length);
                     fs.Read(fileOffset, 0, fileOffset.Length);
-                    fs.Read(fileLenght2, 0, fileLenght2.Length);
+                    fs.Read(fileEncryptedLenght, 0, fileEncryptedLenght.Length);
                     fs.Read(fileEncrypted, 0, fileEncrypted.Length);
                     int encrypted = BitConverter.ToInt32(fileEncrypted, 0);
 
-                    PropertyWindow.Text += KFN.GetFileType(fileType) + ": "
-                        + new string(Encoding.GetEncoding(filesEncoding).GetChars(fileName))
-                        + ", length1=" + BitConverter.ToUInt32(fileLenght1, 0)
-                        + ", length2=" + BitConverter.ToUInt32(fileLenght2, 0)
-                        + ", encrypted - " + ((encrypted == 1) ? "yes\n" : ((encrypted == 0) ? "no\n" : "unknown (" + encrypted + ")\n"));
+                    string fName = new string(Encoding.GetEncoding(filesEncoding).GetChars(fileName));
+                    //PropertyWindow.Text += KFN.GetFileType(fileType) + ": "
+                    //    + fName
+                    //    + ", length1=" + BitConverter.ToUInt32(fileLenght, 0)
+                    //    + ", length2=" + BitConverter.ToUInt32(fileEncryptedLenght, 0)
+                    //    + ", encrypted - " + ((encrypted == 1) ? "yes\n" : ((encrypted == 0) ? "no\n" : "unknown (" + encrypted + ")\n"));
+
+                    resources.Add(new KFN.ResorceFile(
+                        KFN.GetFileType(fileType),
+                        fName,
+                        BitConverter.ToInt32(fileEncryptedLenght, 0),
+                        BitConverter.ToInt32(fileOffset, 0)
+                    ));
 
                     filesCount--;
                 }
+                endOfHeaderOffset = fs.Position;
+                resourcesView.ItemsSource = resources;
+                AutoSizeColumns(resourcesView.View as GridView);
             }
         }
 
@@ -149,5 +194,63 @@ namespace KFN_Viewer
             filesEncoding = selectedEncoding.Key;
             if (KFNFile != null) { ReadFile(); }
         }
+
+        private void ExportResource(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
+            KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
+
+            FolderBrowserDialog.SelectedPath = new FileInfo(KFNFile).DirectoryName;
+            if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string exportFolder = FolderBrowserDialog.SelectedPath;
+                try
+                {
+                    System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
+                }
+                catch (UnauthorizedAccessException error)
+                {
+                    System.Windows.MessageBox.Show(error.Message);
+                    return;
+                }
+
+                byte[] data = new byte[resource.FileLength];
+                using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
+                {
+                    fs.Position = endOfHeaderOffset + resource.FileOffset;
+                    fs.Read(data, 0, data.Length);
+                }
+
+                using (FileStream fs = new FileStream(exportFolder + resource.FileName, FileMode.Create, FileAccess.Write))
+                {
+                    fs.Write(data, 0, data.Length);
+                }
+                System.Windows.MessageBox.Show("Export OK: " + exportFolder + resource.FileName);
+            }
+        }
+
+        public void AutoSizeColumns(GridView gv)
+        {
+            if (gv != null)
+            {
+                foreach (var c in gv.Columns)
+                {
+                    // Code below was found in GridViewColumnHeader.OnGripperDoubleClicked() event handler (using Reflector)
+                    // i.e. it is the same code that is executed when the gripper is double clicked
+                    if (double.IsNaN(c.Width))
+                    {
+                        c.Width = c.ActualWidth;
+                    }
+                    c.Width = double.NaN;
+                }
+            }
+        }
+
+        // encryption
+        //https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.aes?view=netframework-4.5
+
+        // karaore text
+        //https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/how-to-create-outlined-text
+        //https://ru.stackoverflow.com/questions/630777/%D0%97%D0%B0%D0%BA%D1%80%D0%B0%D1%81%D0%B8%D1%82%D1%8C-%D1%82%D0%B5%D0%BA%D1%81%D1%82-%D1%81%D0%BB%D0%BE%D0%B2%D0%BE-%D0%B1%D1%83%D0%BA%D0%B2%D1%83
     }
 }

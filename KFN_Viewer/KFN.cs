@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class KFN
 {
-    private Dictionary<string, string> blocksDesc = new Dictionary<string, string>{
+    private Dictionary<string, string> propsDesc = new Dictionary<string, string>{
         {"DIFM", "Man difficult"},
         {"DIFW", "Woman difficult"},
         {"GNRE", "Genre"},
@@ -40,10 +40,10 @@ public class KFN
 
     public KFN() {}
 
-    public string GetBlockDesc(string BlockName)
+    public string GetPropDesc(string PropName)
     {
-        if (blocksDesc.ContainsKey(BlockName)) { return blocksDesc[BlockName]; }
-        return "(unknown) " + BlockName;
+        if (propsDesc.ContainsKey(PropName)) { return propsDesc[PropName]; }
+        return "(unknown) " + PropName;
     }
 
     public string GetFileType(byte[] type)
@@ -51,5 +51,39 @@ public class KFN
         int ftype = BitConverter.ToInt32(type, 0);
         if (fileTypes.ContainsKey(ftype)) { return fileTypes[ftype]; }
         return "Unknown (" + ftype + ")";
+    }
+
+    public class ResorceFile
+    {
+        private string Type;
+        private string Name;
+        private int Length;
+        private int Offset;
+
+        public string FileType
+        {
+            get { return this.Type; }
+        }
+        public string FileName
+        {
+            get { return this.Name; }
+        }
+        public int FileLength
+        {
+            get { return this.Length; }
+            set { this.Length = value; }
+        }
+        public int FileOffset
+        {
+            get { return this.Offset; }
+        }
+
+        public ResorceFile(string type, string name, int length, int offset)
+        {
+            this.Type = type;
+            this.Name = name;
+            this.Length = length;
+            this.Offset = offset;
+        }
     }
 }
