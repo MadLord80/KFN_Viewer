@@ -59,6 +59,7 @@ public class KFN
         private string Name;
         private int Length;
         private int Offset;
+        private bool Encrypted;
 
         public string FileType
         {
@@ -77,13 +78,18 @@ public class KFN
         {
             get { return this.Offset; }
         }
+        public bool IsEncrypted
+        {
+            get { return this.Encrypted; }
+        }
 
-        public ResorceFile(string type, string name, int length, int offset)
+        public ResorceFile(string type, string name, int length, int offset, bool encrypted)
         {
             this.Type = type;
             this.Name = name;
             this.Length = length;
             this.Offset = offset;
+            this.Encrypted = encrypted;
         }
     }
 }
