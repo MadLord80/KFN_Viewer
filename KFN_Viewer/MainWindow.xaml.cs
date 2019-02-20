@@ -251,6 +251,12 @@ namespace KFN_Viewer
         // encryption
         //https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.aes?view=netframework-4.5
 
+        private void Test(object sender, RoutedEventArgs e)
+        {
+            Window playerWindow = new PlayWindow("D:\\DJ Piligrim LIVE @ Disco MCLUB (Augsburg) - 20. Mai 2009.avi");
+            playerWindow.Show();
+        }
+
         private void TestEnc(object sender, RoutedEventArgs e)
         {
             //string plainText = "test text";
