@@ -223,11 +223,11 @@ namespace KFN_Viewer
                     fs.Read(data, 0, data.Length);
                 }
 
-                using (FileStream fs = new FileStream(exportFolder + resource.FileName, FileMode.Create, FileAccess.Write))
+                using (FileStream fs = new FileStream(exportFolder + "\\" + resource.FileName, FileMode.Create, FileAccess.Write))
                 {
                     fs.Write(data, 0, data.Length);
                 }
-                System.Windows.MessageBox.Show("Export OK: " + exportFolder + resource.FileName);
+                System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + resource.FileName);
             }
         }
 
@@ -260,8 +260,8 @@ namespace KFN_Viewer
         private void TestEnc(object sender, RoutedEventArgs e)
         {
             //string plainText = "test text";
-            KFNFile = "D:\\что такое осень lock.kfn";
-            ReadFile();
+            //KFNFile = "D:\\что такое осень lock.kfn";
+            //ReadFile();
             KFN.ResorceFile rf = resources.Where(r => r.FileType == "Lyrics").First();
             byte[] data = new byte[rf.FileLength];
             using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
@@ -276,106 +276,30 @@ namespace KFN_Viewer
                     .Where(x => x % 2 == 0)
                     .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
                     .ToArray();
-            byte[] IV = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            //byte[] IV = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
             //byte[] encrypted = EncryptStringToBytes_Aes(plainText, Key, IV);
-            string decrypted = DecryptData(data, Key, IV);
+            //string decrypted = DecryptData(data, Key, IV);
+            string decrypted = DecryptData(data, Key);
+            using (FileStream fs = new FileStream("c:\\temp\\kfn\\Song.ini", FileMode.Create, FileAccess.Write))
+            {
+                byte[] dec = Encoding.UTF8.GetBytes(decrypted);
+                fs.Write(dec, 0, dec.Length);
+            }
+            System.Windows.MessageBox.Show("Decrypt OK");
         }
 
-        private string DecryptData(byte[] data, byte[] Key, byte[] IV)
-        //private byte[] DecryptData(byte[] data)
+        private string DecryptData(byte[] data, byte[] Key)
         {
-            //byte[] cipherText, byte[] Key, byte[] IV
-            // Check arguments.
-            //if (cipherText == null || cipherText.Length <= 0)
-            //    throw new ArgumentNullException("cipherText");
-            //if (Key == null || Key.Length <= 0)
-            //    throw new ArgumentNullException("Key");
-            //if (IV == null || IV.Length <= 0)
-            //    throw new ArgumentNullException("IV");
-
-            // Declare the string used to hold
-            // the decrypted text.
-            string plaintext = null;
-            //byte[] decrypted = { };
-
-            // Create an Aes object
-            // with the specified key and IV.
-            using (Aes aesAlg = Aes.Create())
+            RijndaelManaged aes = new RijndaelManaged();
+            aes.KeySize = 128;
+            aes.Padding = PaddingMode.None;
+            aes.Mode = CipherMode.ECB;
+            using (ICryptoTransform decrypt = aes.CreateDecryptor(Key, null))
             {
-                aesAlg.Key = Key;
-                //aesAlg.Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
-                //    .Where(x => x % 2 == 0)
-                //    .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
-                //    .ToArray();
-                aesAlg.IV = IV;
-
-                // Create a decryptor to perform the stream transform.
-                ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-                //ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, new byte[] { 0 });
-
-                // Create the streams used for decryption.
-                //using (MemoryStream msDecrypt = new MemoryStream(cipherText))
-                using (MemoryStream msDecrypt = new MemoryStream(data))
-                {
-                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                    {
-                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
-                        {
-
-                            // Read the decrypted bytes from the decrypting stream
-                            // and place them in a string.
-                            plaintext = srDecrypt.ReadToEnd();
-                            //decrypted = srDecrypt.r
-                        }
-                    }
-                }
-
+                byte[] dest = decrypt.TransformFinalBlock(data, 0, data.Length);
+                decrypt.Dispose();
+                return Encoding.UTF8.GetString(dest);
             }
-            return plaintext;
-            //return decrypted;
-        }
-
-        static byte[] EncryptStringToBytes_Aes(string plainText, byte[] Key, byte[] IV)
-        {
-            //string plainText, byte[] Key, byte[] IV
-            
-            // Check arguments.
-            //if (plainText == null || plainText.Length <= 0)
-            //    throw new ArgumentNullException("plainText");
-            //if (Key == null || Key.Length <= 0)
-            //    throw new ArgumentNullException("Key");
-            //if (IV == null || IV.Length <= 0)
-            //    throw new ArgumentNullException("IV");
-            byte[] encrypted;
-
-            // Create an Aes object
-            // with the specified key and IV.
-            using (Aes aesAlg = Aes.Create())
-            {
-                aesAlg.Key = Key;
-                aesAlg.IV = IV;
-
-                // Create an encryptor to perform the stream transform.
-                ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
-                //ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, new byte[] { 0 });
-
-                // Create the streams used for encryption.
-                using (MemoryStream msEncrypt = new MemoryStream())
-                {
-                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-                    {
-                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
-                        {
-                            //Write all data to the stream.
-                            swEncrypt.Write(plainText);
-                        }
-                        encrypted = msEncrypt.ToArray();
-                    }
-                }
-            }
-            // Return the encrypted bytes from the memory stream.
-            return encrypted;
-
         }
 
         // karaore text
