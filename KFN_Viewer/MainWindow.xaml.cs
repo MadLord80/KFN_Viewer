@@ -6,14 +6,10 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Controls;
 using System.IO;
-using System.Drawing;
 using System.Security.Cryptography;
 
 namespace KFN_Viewer
 {
-    /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private readonly OpenFileDialog OpenFileDialog = new OpenFileDialog();
@@ -28,8 +24,8 @@ namespace KFN_Viewer
         // https://docs.microsoft.com/ru-ru/dotnet/api/system.text.encodinginfo.name?view=netframework-4.5
         private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
         {
-            {65001, "utf-8"},
-            {1251,  "windows-1251"}
+            {65001, "Unicode (UTF-8)"},
+            {1251,  "Cyrillic (Windows)"}
         };
 
         public MainWindow()
@@ -39,6 +35,11 @@ namespace KFN_Viewer
             string version = System.Windows.Forms.Application.ProductVersion;
             MainWindowElement.Title += " v." + version.Remove(version.Length - 2);
 
+            foreach (EncodingInfo enc in Encoding.GetEncodings())
+            {
+                if (enc.CodePage == 65001 || enc.CodePage == 1251) { continue; }
+                encodings.Add(enc.CodePage, enc.DisplayName);
+            }
             FilesEncodingElement.DisplayMemberPath = "Value";
             FilesEncodingElement.ItemsSource = encodings;
             FilesEncodingElement.SelectedIndex = 0;
@@ -63,7 +64,6 @@ namespace KFN_Viewer
             resources.Clear();
 
             fileNameLabel.Content = "KFN file: " + KFNFile;
-            //PropertyWindow.Text = "File: " + KFNFile + "\nHeader blocks:\n";
 
             using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
             {
@@ -94,7 +94,6 @@ namespace KFN_Viewer
                         fs.Read(propValue, 0, propValue.Length);
                         if (SpropName == "Genre" && BitConverter.ToUInt32(propValue, 0) == 0xffffffff)
                         {
-                            //PropertyWindow.Text += SpropName + ": Not set\n";
                             properties.Add(SpropName, "Not set");
                         }
                         else
@@ -119,7 +118,6 @@ namespace KFN_Viewer
                             string val = (value.Select(b => (int)b).Sum() == 0) 
                                 ? "Not present" 
                                 : value.Select(b => b.ToString("X2")).Aggregate((s1, s2) => s1 + s2);
-                            //PropertyWindow.Text += SpropName + ": " + val + "\n";
                             properties.Add(SpropName, val);
                         }
                         else
@@ -147,7 +145,6 @@ namespace KFN_Viewer
                 byte[] numOfFiles = new byte[4];
                 fs.Read(numOfFiles, 0, numOfFiles.Length);
                 int filesCount = BitConverter.ToInt32(numOfFiles, 0);
-                //PropertyWindow.Text += "Files (" + filesCount + "):\n";
                 while (filesCount > 0)
                 {
                     byte[] fileNameLenght = new byte[4];
@@ -168,11 +165,6 @@ namespace KFN_Viewer
                     int encrypted = BitConverter.ToInt32(fileEncrypted, 0);
 
                     string fName = new string(Encoding.GetEncoding(filesEncoding).GetChars(fileName));
-                    //PropertyWindow.Text += KFN.GetFileType(fileType) + ": "
-                    //    + fName
-                    //    + ", length1=" + BitConverter.ToUInt32(fileLenght, 0)
-                    //    + ", length2=" + BitConverter.ToUInt32(fileEncryptedLenght, 0)
-                    //    + ", encrypted - " + ((encrypted == 1) ? "yes\n" : ((encrypted == 0) ? "no\n" : "unknown (" + encrypted + ")\n"));
 
                     resources.Add(new KFN.ResorceFile(
                         KFN.GetFileType(fileType),
@@ -223,6 +215,15 @@ namespace KFN_Viewer
                     fs.Read(data, 0, data.Length);
                 }
 
+                if (resource.IsEncrypted)
+                {
+                    byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
+                        .Where(x => x % 2 == 0)
+                        .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
+                        .ToArray();
+                    data = DecryptData(data, Key);
+                }
+
                 using (FileStream fs = new FileStream(exportFolder + "\\" + resource.FileName, FileMode.Create, FileAccess.Write))
                 {
                     fs.Write(data, 0, data.Length);
@@ -248,47 +249,7 @@ namespace KFN_Viewer
             }
         }
 
-        // encryption
-        //https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.aes?view=netframework-4.5
-
-        private void Test(object sender, RoutedEventArgs e)
-        {
-            Window playerWindow = new PlayWindow("D:\\DJ Piligrim LIVE @ Disco MCLUB (Augsburg) - 20. Mai 2009.avi");
-            playerWindow.Show();
-        }
-
-        private void TestEnc(object sender, RoutedEventArgs e)
-        {
-            //string plainText = "test text";
-            //KFNFile = "D:\\что такое осень lock.kfn";
-            //ReadFile();
-            KFN.ResorceFile rf = resources.Where(r => r.FileType == "Lyrics").First();
-            byte[] data = new byte[rf.FileLength];
-            using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
-            {
-                fs.Position = endOfHeaderOffset + rf.FileOffset;
-                fs.Read(data, 0, data.Length);
-            }
-            //string plainText = new string(Encoding.UTF8.GetChars(data));
-
-            //byte[] Key = { 0x6D, 0xF0, 0xD2, 0xB8, 0xC1, 0xD7, 0xCF, 0xC9, 0x2F, 0xAE, 0xB0, 0xEF, 0x25, 0xE3, 0xB4, 0x8A };
-            byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
-                    .Where(x => x % 2 == 0)
-                    .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
-                    .ToArray();
-            //byte[] IV = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-            //byte[] encrypted = EncryptStringToBytes_Aes(plainText, Key, IV);
-            //string decrypted = DecryptData(data, Key, IV);
-            string decrypted = DecryptData(data, Key);
-            using (FileStream fs = new FileStream("c:\\temp\\kfn\\Song.ini", FileMode.Create, FileAccess.Write))
-            {
-                byte[] dec = Encoding.UTF8.GetBytes(decrypted);
-                fs.Write(dec, 0, dec.Length);
-            }
-            System.Windows.MessageBox.Show("Decrypt OK");
-        }
-
-        private string DecryptData(byte[] data, byte[] Key)
+        private byte[] DecryptData(byte[] data, byte[] Key)
         {
             RijndaelManaged aes = new RijndaelManaged();
             aes.KeySize = 128;
@@ -298,10 +259,17 @@ namespace KFN_Viewer
             {
                 byte[] dest = decrypt.TransformFinalBlock(data, 0, data.Length);
                 decrypt.Dispose();
-                return Encoding.UTF8.GetString(dest);
+                //return Encoding.UTF8.GetString(dest);
+                return dest;
             }
         }
 
+        // TODO (maybe)
+        private void Test(object sender, RoutedEventArgs e)
+        {
+            //Window playerWindow = new PlayWindow("D:\\DJ Piligrim LIVE @ Disco MCLUB (Augsburg) - 20. Mai 2009.avi");
+            //playerWindow.Show();
+        }
         // karaore text
         //https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/how-to-create-outlined-text
         //https://ru.stackoverflow.com/questions/630777/%D0%97%D0%B0%D0%BA%D1%80%D0%B0%D1%81%D0%B8%D1%82%D1%8C-%D1%82%D0%B5%D0%BA%D1%81%D1%82-%D1%81%D0%BB%D0%BE%D0%B2%D0%BE-%D0%B1%D1%83%D0%BA%D0%B2%D1%83

@@ -12,8 +12,8 @@
             <RowDefinition Height="206*"/>
         </Grid.RowDefinitions>
         <Button x:Name="OpenFileButton" Content="Open KFN file" HorizontalAlignment="Left" VerticalAlignment="Top" Width="133" Margin="0,10,0,0" Click="OpenFileButton_Click"/>
-        <ScrollViewer Margin="0,246,565,10" Grid.Row="1">
-            <TextBlock x:Name="PropertyWindow" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="360" Grid.ColumnSpan="2" Height="43"/>
+        <ScrollViewer Margin="0,246,18,10" Grid.Row="1">
+            <TextBlock x:Name="PropertyWindow" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="900" Grid.ColumnSpan="2" Height="146"/>
         </ScrollViewer>
         <Label Content="File names encoding:" HorizontalAlignment="Left" Margin="395,6,0,0" VerticalAlignment="Top" Width="124"/>
         <ComboBox x:Name="FilesEncodingElement" HorizontalAlignment="Left" Margin="524,10,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="FilesEncodingElement_SelectionChanged"/>
@@ -45,8 +45,8 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <Label Content="Unknown properties:" HorizontalAlignment="Left" Margin="10,211.901,0,0" VerticalAlignment="Top" Width="148" FontSize="14" Grid.Row="1"/>
-        <Button x:Name="testButton" Content="Test" HorizontalAlignment="Left" Margin="160,10,0,0" VerticalAlignment="Top" Width="75" Click="TestEnc"/>
+        <Label Content="Unknown properties:" HorizontalAlignment="Left" Margin="0,187,0,0" VerticalAlignment="Top" Width="148" FontSize="14" Grid.Row="1"/>
+        <Button x:Name="testButton" Content="Test" HorizontalAlignment="Left" Margin="160,10,0,0" VerticalAlignment="Top" Width="75" Visibility="Hidden"/>
 
     </Grid>
 </Window>
