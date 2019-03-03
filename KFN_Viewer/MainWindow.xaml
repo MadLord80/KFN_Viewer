@@ -15,8 +15,8 @@
         <ScrollViewer Margin="0,246,18,10" Grid.Row="1">
             <TextBlock x:Name="PropertyWindow" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="900" Grid.ColumnSpan="2" Height="146"/>
         </ScrollViewer>
-        <Label Content="File names encoding:" HorizontalAlignment="Left" Margin="395,6,0,0" VerticalAlignment="Top" Width="124"/>
-        <ComboBox x:Name="FilesEncodingElement" HorizontalAlignment="Left" Margin="524,10,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="FilesEncodingElement_SelectionChanged"/>
+        <Label Content="Resources encoding:" HorizontalAlignment="Left" Margin="395,6,0,0" VerticalAlignment="Top" Width="124"/>
+        <ComboBox x:Name="FilesEncodingElement" HorizontalAlignment="Left" Margin="524,10,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="FilesEncodingElement_SelectionChanged" DropDownClosed="FilesEncodingElement_DropDownClosed"/>
         <Label x:Name="fileNameLabel" Content="" HorizontalAlignment="Left" Margin="10,54,0,0" VerticalAlignment="Top" Width="919" FontSize="18"/>
         <Label Content="Properties:" HorizontalAlignment="Left" Margin="10,93,0,0" VerticalAlignment="Top" Width="133" FontSize="14"/>
         <Label Content="Resources:" HorizontalAlignment="Left" Margin="396,93,0,0" VerticalAlignment="Top" Width="133" FontSize="14"/>
@@ -47,6 +47,8 @@
         </ListView>
         <Label Content="Unknown properties:" HorizontalAlignment="Left" Margin="0,187,0,0" VerticalAlignment="Top" Width="148" FontSize="14" Grid.Row="1"/>
         <Button x:Name="testButton" Content="Test" HorizontalAlignment="Left" Margin="160,10,0,0" VerticalAlignment="Top" Width="75" Click="TestButton_Click"/>
+        <Label Content="Auto detect is:" HorizontalAlignment="Left" Margin="659,8,0,0" VerticalAlignment="Top" Width="88"/>
+        <Label x:Name="AutoDetectedEncLabel" Content="" HorizontalAlignment="Left" Margin="747,8,0,0" VerticalAlignment="Top" Width="172"/>
 
     </Grid>
 </Window>

@@ -20,14 +20,11 @@ namespace KFN_Viewer
         private List<KFN.ResorceFile> resources = new List<KFN.ResorceFile>();
         private Dictionary<string, string> properties = new Dictionary<string, string>();
         private long endOfHeaderOffset;
-
-        private int filesEncoding = 65001;
-        // https://docs.microsoft.com/ru-ru/dotnet/api/system.text.encodinginfo.name?view=netframework-4.5
+        
+        private int filesEncoding = 0;
+        private int filesEncodingAuto = 0;
         private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
-        {
-            {65001, "Unicode (UTF-8)"},
-            {1251,  "Cyrillic (Windows)"}
-        };
+        { { 0, "Use auto detect" } };
 
         public MainWindow()
         {
@@ -38,12 +35,13 @@ namespace KFN_Viewer
 
             foreach (EncodingInfo enc in Encoding.GetEncodings())
             {
-                if (enc.CodePage == 65001 || enc.CodePage == 1251) { continue; }
+                //if (enc.CodePage == 65001 || enc.CodePage == 1251) { continue; }
                 encodings.Add(enc.CodePage, enc.DisplayName);
             }
             FilesEncodingElement.DisplayMemberPath = "Value";
             FilesEncodingElement.ItemsSource = encodings;
             FilesEncodingElement.SelectedIndex = 0;
+            FilesEncodingElement.IsEnabled = false;
 
             OpenFileDialog.Filter = "KFN files (*.kfn)|*.kfn|All files (*.*)|*.*";
         }
@@ -63,6 +61,7 @@ namespace KFN_Viewer
             properties.Clear();
             resourcesView.ItemsSource = null;
             resources.Clear();
+            filesEncodingAuto = 0;
 
             fileNameLabel.Content = "KFN file: " + KFNFile;
 
@@ -165,7 +164,36 @@ namespace KFN_Viewer
                     fs.Read(fileEncrypted, 0, fileEncrypted.Length);
                     int encrypted = BitConverter.ToInt32(fileEncrypted, 0);
 
-                    string fName = new string(Encoding.GetEncoding(filesEncoding).GetChars(fileName));
+                    if (KFN.GetFileType(fileType) == "Audio" && filesEncodingAuto == 0)
+                    {
+                        UniversalDetector Det = new UniversalDetector(null);
+                        Det.HandleData(fileName, 0, fileName.Length);
+                        Det.DataEnd();
+                        string enc = Det.GetDetectedCharset();
+                        if (enc != null && enc != "Not supported")
+                        {
+                            Encoding denc = Encoding.GetEncoding(enc);
+                            filesEncodingAuto = denc.CodePage;
+                            AutoDetectedEncLabel.Content = denc.EncodingName;
+                            if (filesEncoding == 0)
+                            {
+                                filesEncoding = denc.CodePage;
+                                FilesEncodingElement.SelectionChanged -= 
+                                    new SelectionChangedEventHandler(FilesEncodingElement_SelectionChanged);
+                                FilesEncodingElement.SelectedIndex = FilesEncodingElement.Items
+                                    .IndexOf(encodings.Where(e => e.Key == denc.CodePage).First());
+                                FilesEncodingElement.SelectionChanged +=
+                                    new SelectionChangedEventHandler(FilesEncodingElement_SelectionChanged);
+                            }
+                        }
+                        else
+                        {
+                            AutoDetectedEncLabel.Content = "No detected";
+                        }
+                    }
+
+                    int useEncoding = (filesEncoding != 0) ? filesEncoding : filesEncodingAuto;
+                    string fName = new string(Encoding.GetEncoding(useEncoding).GetChars(fileName));
 
                     resources.Add(new KFN.ResorceFile(
                         KFN.GetFileType(fileType),
@@ -181,9 +209,17 @@ namespace KFN_Viewer
                 resourcesView.ItemsSource = resources;
                 AutoSizeColumns(resourcesView.View as GridView);
             }
+            FilesEncodingElement.IsEnabled = true;
         }
 
         private void FilesEncodingElement_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            KeyValuePair<int, string> selectedEncoding = (KeyValuePair<int, string>)FilesEncodingElement.SelectedItem;
+            filesEncoding = selectedEncoding.Key;
+            if (KFNFile != null) { ReadFile(); }
+        }
+
+        private void FilesEncodingElement_DropDownClosed(object sender, EventArgs e)
         {
             KeyValuePair<int, string> selectedEncoding = (KeyValuePair<int, string>)FilesEncodingElement.SelectedItem;
             filesEncoding = selectedEncoding.Key;
@@ -274,19 +310,8 @@ namespace KFN_Viewer
 
         private void TestButton_Click(object sender, RoutedEventArgs e)
         {
-            byte[] DetectBuff = new byte[4096];
-            UniversalDetector Det = new UniversalDetector(null);
-            while ((DetLen = msTemp.Read(DetectBuff, 0, DetectBuff.Length)) > 0 && !Det.IsDone())
-            {
-                Det.HandleData(DetectBuff, 0, DetectBuff.Length);
-            }
-            Det.DataEnd();
-            if (Det.GetDetectedCharset() != null)
-            {
-                //CharSetBox.Text = "OK! CharSet=" + Det.GetDetectedCharset();
-                //PageBox.Text = System.Text.Encoding.GetEncoding(Det.GetDetectedCharset()).GetString(PageBytes);
-            }
         }
+
         // karaore text
         //https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/how-to-create-outlined-text
         //https://ru.stackoverflow.com/questions/630777/%D0%97%D0%B0%D0%BA%D1%80%D0%B0%D1%81%D0%B8%D1%82%D1%8C-%D1%82%D0%B5%D0%BA%D1%81%D1%82-%D1%81%D0%BB%D0%BE%D0%B2%D0%BE-%D0%B1%D1%83%D0%BA%D0%B2%D1%83
