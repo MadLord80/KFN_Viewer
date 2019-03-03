@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using System.Windows.Controls;
 using System.IO;
 using System.Security.Cryptography;
+using Mozilla.NUniversalCharDet;
 
 namespace KFN_Viewer
 {
@@ -269,6 +270,22 @@ namespace KFN_Viewer
         {
             //Window playerWindow = new PlayWindow("D:\\DJ Piligrim LIVE @ Disco MCLUB (Augsburg) - 20. Mai 2009.avi");
             //playerWindow.Show();
+        }
+
+        private void TestButton_Click(object sender, RoutedEventArgs e)
+        {
+            byte[] DetectBuff = new byte[4096];
+            UniversalDetector Det = new UniversalDetector(null);
+            while ((DetLen = msTemp.Read(DetectBuff, 0, DetectBuff.Length)) > 0 && !Det.IsDone())
+            {
+                Det.HandleData(DetectBuff, 0, DetectBuff.Length);
+            }
+            Det.DataEnd();
+            if (Det.GetDetectedCharset() != null)
+            {
+                //CharSetBox.Text = "OK! CharSet=" + Det.GetDetectedCharset();
+                //PageBox.Text = System.Text.Encoding.GetEncoding(Det.GetDetectedCharset()).GetString(PageBytes);
+            }
         }
         // karaore text
         //https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/how-to-create-outlined-text

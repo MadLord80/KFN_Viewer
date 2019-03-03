@@ -58,6 +58,65 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="uchardet\ByteBuffer.cs" />
+    <Compile Include="uchardet\Constants.cs" />
+    <Compile Include="uchardet\ICharsetListener.cs" />
+    <Compile Include="uchardet\Prober\Big5Prober.cs" />
+    <Compile Include="uchardet\Prober\CharsetProber.cs" />
+    <Compile Include="uchardet\Prober\ContextAnalysis\EUCJPContextAnalysis.cs" />
+    <Compile Include="uchardet\Prober\ContextAnalysis\JapaneseContextAnalysis.cs" />
+    <Compile Include="uchardet\Prober\ContextAnalysis\SJISContextAnalysis.cs" />
+    <Compile Include="uchardet\Prober\DistributionAnalysis\Big5DistributionAnalysis.cs" />
+    <Compile Include="uchardet\Prober\DistributionAnalysis\CharDistributionAnalysis.cs" />
+    <Compile Include="uchardet\Prober\DistributionAnalysis\EUCJPDistributionAnalysis.cs" />
+    <Compile Include="uchardet\Prober\DistributionAnalysis\EUCKRDistributionAnalysis.cs" />
+    <Compile Include="uchardet\Prober\DistributionAnalysis\EUCTWDistributionAnalysis.cs" />
+    <Compile Include="uchardet\Prober\DistributionAnalysis\GB2312DistributionAnalysis.cs" />
+    <Compile Include="uchardet\Prober\DistributionAnalysis\JISDistributionAnalysis.cs" />
+    <Compile Include="uchardet\Prober\DistributionAnalysis\SJISDistributionAnalysis.cs" />
+    <Compile Include="uchardet\Prober\EscCharsetProber.cs" />
+    <Compile Include="uchardet\Prober\EUCJPProber.cs" />
+    <Compile Include="uchardet\Prober\EUCKRProber.cs" />
+    <Compile Include="uchardet\Prober\EUCTWProber.cs" />
+    <Compile Include="uchardet\Prober\GB18030Prober.cs" />
+    <Compile Include="uchardet\Prober\HebrewProber.cs" />
+    <Compile Include="uchardet\Prober\Latin1Prober.cs" />
+    <Compile Include="uchardet\Prober\MBCSGroupProber.cs" />
+    <Compile Include="uchardet\Prober\SBCSGroupProber.cs" />
+    <Compile Include="uchardet\Prober\Sequence\BulgarianModel.cs" />
+    <Compile Include="uchardet\Prober\Sequence\CyrillicModel.cs" />
+    <Compile Include="uchardet\Prober\Sequence\GreekModel.cs" />
+    <Compile Include="uchardet\Prober\Sequence\HebrewModel.cs" />
+    <Compile Include="uchardet\Prober\Sequence\Ibm855Model.cs" />
+    <Compile Include="uchardet\Prober\Sequence\Ibm866Model.cs" />
+    <Compile Include="uchardet\Prober\Sequence\Koi8rModel.cs" />
+    <Compile Include="uchardet\Prober\Sequence\Latin5BulgarianModel.cs" />
+    <Compile Include="uchardet\Prober\Sequence\Latin5Model .cs" />
+    <Compile Include="uchardet\Prober\Sequence\Latin7Model.cs" />
+    <Compile Include="uchardet\Prober\Sequence\MacCyrillicModel.cs" />
+    <Compile Include="uchardet\Prober\Sequence\SequenceModel.cs" />
+    <Compile Include="uchardet\Prober\Sequence\Win1251BulgarianModel.cs" />
+    <Compile Include="uchardet\Prober\Sequence\Win1251Model.cs" />
+    <Compile Include="uchardet\Prober\Sequence\Win1253Model.cs" />
+    <Compile Include="uchardet\Prober\SingleByteCharsetProber.cs" />
+    <Compile Include="uchardet\Prober\SJISProber.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\Big5SMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\CodingStateMachine.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\EUCJPSMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\EUCKRSMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\EUCTWSMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\GB18030SMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\HZSMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\ISO2022CNSMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\ISO2022JPSMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\ISO2022KRSMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\PkgInt.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\SJISSMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\SMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\UCS2BESMModel.cs" />
+    <Compile Include="uchardet\Prober\StateMachine\UTF8SMModel.cs" />
+    <Compile Include="uchardet\Prober\UTF8Prober.cs" />
+    <Compile Include="uchardet\UniversalDetector.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -108,5 +167,6 @@
   <ItemGroup>
     <Resource Include="NinjaToy.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

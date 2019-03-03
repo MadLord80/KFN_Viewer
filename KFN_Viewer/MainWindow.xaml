@@ -46,7 +46,7 @@
             </ListView.View>
         </ListView>
         <Label Content="Unknown properties:" HorizontalAlignment="Left" Margin="0,187,0,0" VerticalAlignment="Top" Width="148" FontSize="14" Grid.Row="1"/>
-        <Button x:Name="testButton" Content="Test" HorizontalAlignment="Left" Margin="160,10,0,0" VerticalAlignment="Top" Width="75" Visibility="Hidden"/>
+        <Button x:Name="testButton" Content="Test" HorizontalAlignment="Left" Margin="160,10,0,0" VerticalAlignment="Top" Width="75" Click="TestButton_Click"/>
 
     </Grid>
 </Window>
