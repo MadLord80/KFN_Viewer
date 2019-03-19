@@ -35,7 +35,8 @@ public class KFN
         {2, "Audio"},
         {3, "Image"},
         {4, "Font"},
-        {5, "Video"}
+        {5, "Video"},
+        {6, "Visualization"}
     };
 
     public KFN() {}

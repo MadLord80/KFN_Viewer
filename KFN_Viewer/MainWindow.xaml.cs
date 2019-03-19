@@ -20,9 +20,8 @@ namespace KFN_Viewer
         private List<KFN.ResorceFile> resources = new List<KFN.ResorceFile>();
         private Dictionary<string, string> properties = new Dictionary<string, string>();
         private long endOfHeaderOffset;
-        
-        private int filesEncoding = 0;
-        private int filesEncodingAuto = 0;
+
+        private int filesEncodingAuto = 20127;
         private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
         { { 0, "Use auto detect" } };
 
@@ -35,8 +34,7 @@ namespace KFN_Viewer
 
             foreach (EncodingInfo enc in Encoding.GetEncodings())
             {
-                //if (enc.CodePage == 65001 || enc.CodePage == 1251) { continue; }
-                encodings.Add(enc.CodePage, enc.DisplayName);
+                encodings.Add(enc.CodePage, enc.CodePage + ": " + enc.DisplayName);
             }
             FilesEncodingElement.DisplayMemberPath = "Value";
             FilesEncodingElement.ItemsSource = encodings;
@@ -44,6 +42,9 @@ namespace KFN_Viewer
             FilesEncodingElement.IsEnabled = false;
 
             OpenFileDialog.Filter = "KFN files (*.kfn)|*.kfn|All files (*.*)|*.*";
+#if !DEBUG
+            testButton.Visibility = Visibility.Hidden;               
+#endif
         }
 
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
@@ -51,17 +52,17 @@ namespace KFN_Viewer
             if (OpenFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 KFNFile = OpenFileDialog.FileName;
+                filesEncodingAuto = 20127;
                 ReadFile();
             }
         }
 
-        private void ReadFile()
+        private void ReadFile(int filesEncoding = 0)
         {
             propertiesView.ItemsSource = null;
             properties.Clear();
             resourcesView.ItemsSource = null;
             resources.Clear();
-            filesEncodingAuto = 0;
 
             fileNameLabel.Content = "KFN file: " + KFNFile;
 
@@ -164,7 +165,7 @@ namespace KFN_Viewer
                     fs.Read(fileEncrypted, 0, fileEncrypted.Length);
                     int encrypted = BitConverter.ToInt32(fileEncrypted, 0);
 
-                    if (KFN.GetFileType(fileType) == "Audio" && filesEncodingAuto == 0)
+                    if (filesEncoding == 0 && filesEncodingAuto == 20127)
                     {
                         UniversalDetector Det = new UniversalDetector(null);
                         Det.HandleData(fileName, 0, fileName.Length);
@@ -172,23 +173,20 @@ namespace KFN_Viewer
                         string enc = Det.GetDetectedCharset();
                         if (enc != null && enc != "Not supported")
                         {
+                            // fix encoding for 1251 upper case and MAC
+                            if (enc == "KOI8-R" || enc == "X-MAC-CYRILLIC") { enc = "WINDOWS-1251"; }
                             Encoding denc = Encoding.GetEncoding(enc);
                             filesEncodingAuto = denc.CodePage;
-                            AutoDetectedEncLabel.Content = denc.EncodingName;
-                            if (filesEncoding == 0)
-                            {
-                                filesEncoding = denc.CodePage;
-                                FilesEncodingElement.SelectionChanged -= 
-                                    new SelectionChangedEventHandler(FilesEncodingElement_SelectionChanged);
-                                FilesEncodingElement.SelectedIndex = FilesEncodingElement.Items
-                                    .IndexOf(encodings.Where(e => e.Key == denc.CodePage).First());
-                                FilesEncodingElement.SelectionChanged +=
-                                    new SelectionChangedEventHandler(FilesEncodingElement_SelectionChanged);
-                            }
+                            AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
+                        }
+                        else if (enc == null)
+                        {
+                            Encoding denc = Encoding.GetEncoding(filesEncodingAuto);
+                            AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
                         }
                         else
                         {
-                            AutoDetectedEncLabel.Content = "No detected";
+                            AutoDetectedEncLabel.Content = "No supported: use " + Encoding.GetEncoding(filesEncodingAuto).EncodingName;
                         }
                     }
 
@@ -210,23 +208,48 @@ namespace KFN_Viewer
                 AutoSizeColumns(resourcesView.View as GridView);
             }
             FilesEncodingElement.IsEnabled = true;
+            if (resources.Count > 1) { ExportAllButton.IsEnabled = true; }
         }
 
         private void FilesEncodingElement_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             KeyValuePair<int, string> selectedEncoding = (KeyValuePair<int, string>)FilesEncodingElement.SelectedItem;
-            filesEncoding = selectedEncoding.Key;
-            if (KFNFile != null) { ReadFile(); }
+            if (KFNFile != null) { ReadFile(selectedEncoding.Key); }
         }
 
-        private void FilesEncodingElement_DropDownClosed(object sender, EventArgs e)
+        private void ExportAllButton_Click(object sender, RoutedEventArgs e)
         {
-            KeyValuePair<int, string> selectedEncoding = (KeyValuePair<int, string>)FilesEncodingElement.SelectedItem;
-            filesEncoding = selectedEncoding.Key;
-            if (KFNFile != null) { ReadFile(); }
+            FileInfo kfnfile = new FileInfo(KFNFile);
+            string KFNFileDir = kfnfile.DirectoryName;
+            string KFNNameDir = kfnfile.Name.Substring(0, kfnfile.Name.Length - kfnfile.Extension.Length);
+            
+            FolderBrowserDialog.SelectedPath = KFNFileDir;
+            if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string exportFolder = FolderBrowserDialog.SelectedPath;
+                try
+                {
+                    System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
+                }
+                catch (UnauthorizedAccessException error)
+                {
+                    System.Windows.MessageBox.Show(error.Message);
+                    return;
+                }
+
+                exportFolder += "\\" + KFNNameDir;
+                if (Directory.Exists(exportFolder)) { Directory.Delete(exportFolder, true); }
+                Directory.CreateDirectory(exportFolder);
+
+                foreach (KFN.ResorceFile resource in resources)
+                {
+                    ExportResource(resource, exportFolder);
+                }
+                System.Windows.MessageBox.Show("Export OK: " + exportFolder);
+            }
         }
 
-        private void ExportResource(object sender, RoutedEventArgs e)
+        private void ExportResourceButtonClick(object sender, RoutedEventArgs e)
         {
             System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
             KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
@@ -245,27 +268,32 @@ namespace KFN_Viewer
                     return;
                 }
 
-                byte[] data = new byte[resource.FileLength];
-                using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
-                {
-                    fs.Position = endOfHeaderOffset + resource.FileOffset;
-                    fs.Read(data, 0, data.Length);
-                }
-
-                if (resource.IsEncrypted)
-                {
-                    byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
-                        .Where(x => x % 2 == 0)
-                        .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
-                        .ToArray();
-                    data = DecryptData(data, Key);
-                }
-
-                using (FileStream fs = new FileStream(exportFolder + "\\" + resource.FileName, FileMode.Create, FileAccess.Write))
-                {
-                    fs.Write(data, 0, data.Length);
-                }
+                ExportResource(resource, exportFolder);
                 System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + resource.FileName);
+            }
+        }
+
+        private void ExportResource(KFN.ResorceFile resource, string folder)
+        {
+            byte[] data = new byte[resource.FileLength];
+            using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
+            {
+                fs.Position = endOfHeaderOffset + resource.FileOffset;
+                fs.Read(data, 0, data.Length);
+            }
+
+            if (resource.IsEncrypted)
+            {
+                byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
+                    .Where(x => x % 2 == 0)
+                    .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
+                    .ToArray();
+                data = DecryptData(data, Key);
+            }
+
+            using (FileStream fs = new FileStream(folder + "\\" + resource.FileName, FileMode.Create, FileAccess.Write))
+            {
+                fs.Write(data, 0, data.Length);
             }
         }
 
@@ -296,7 +324,6 @@ namespace KFN_Viewer
             {
                 byte[] dest = decrypt.TransformFinalBlock(data, 0, data.Length);
                 decrypt.Dispose();
-                //return Encoding.UTF8.GetString(dest);
                 return dest;
             }
         }
@@ -311,6 +338,7 @@ namespace KFN_Viewer
         private void TestButton_Click(object sender, RoutedEventArgs e)
         {
         }
+
 
         // karaore text
         //https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/how-to-create-outlined-text
