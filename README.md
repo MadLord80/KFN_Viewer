@@ -2,8 +2,8 @@
 Viewer for KFN (karafun) files
 
 TODO:
-- [ ] encoding
-- [ ] .milk
+- [x] encoding
+- [x] .milk
 - [ ] advanced export
 - [ ] lyrics to lrc
 
