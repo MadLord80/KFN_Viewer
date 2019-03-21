@@ -1,0 +1,15 @@
+﻿<Window x:Name="ViewWindowElement" x:Class="KFN_Viewer.ViewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:KFN_Viewer"
+        mc:Ignorable="d"
+        Title="View: " Height="687.671" Width="485.891">
+    <Grid>
+        <ScrollViewer Grid.Row="1">
+            <!--<TextBlock x:Name="TextWindow" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top"/>-->
+            <TextBox x:Name="TextWindow" IsReadOnly="True" TextWrapping="Wrap"/>
+        </ScrollViewer>
+    </Grid>
+</Window>

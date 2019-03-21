@@ -249,6 +249,84 @@ namespace KFN_Viewer
             }
         }
 
+        private void ViewResourceButtonClick(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
+            KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
+
+            if (resource.FileType == "Text" || resource.FileType == "Lyrics")
+            {
+                byte[] data = new byte[resource.FileLength];
+                using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
+                {
+                    fs.Position = endOfHeaderOffset + resource.FileOffset;
+                    fs.Read(data, 0, data.Length);
+                }
+
+                if (resource.IsEncrypted)
+                {
+                    byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
+                        .Where(x => x % 2 == 0)
+                        .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
+                        .ToArray();
+                    data = DecryptData(data, Key);
+                }
+
+                //UTF-8
+                int detEncoding = 65001;
+                if (resource.FileType == "Text")
+                {
+                    UniversalDetector Det = new UniversalDetector(null);
+                    Det.HandleData(data, 0, data.Length);
+                    Det.DataEnd();
+                    string enc = Det.GetDetectedCharset();
+                    if (enc != null && enc != "Not supported")
+                    {
+                        // fix encoding for 1251 upper case and MAC
+                        //if (enc == "KOI8-R" || enc == "X-MAC-CYRILLIC") { enc = "WINDOWS-1251"; }
+                        Encoding denc = Encoding.GetEncoding(enc);
+                        detEncoding = denc.CodePage;
+                    }
+                }
+
+                string text = new string(Encoding.GetEncoding(detEncoding).GetChars(data));
+                //string text = new string(Encoding.UTF8.GetChars(data));
+                //byte[] dbytes = Encoding.UTF8.GetBytes(text);
+                //text = new string(Encoding.GetEncoding(1251).GetChars(dbytes));
+                Window viewWindow = new ViewWindow(
+                    resource.FileName, 
+                    text, 
+                    Encoding.GetEncodings().Where(en => en.CodePage == detEncoding).First().DisplayName
+                );
+                viewWindow.Show();
+            }
+            else if (resource.FileType == "Image")
+            {
+                byte[] data = new byte[resource.FileLength];
+                using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
+                {
+                    fs.Position = endOfHeaderOffset + resource.FileOffset;
+                    fs.Read(data, 0, data.Length);
+                }
+
+                if (resource.IsEncrypted)
+                {
+                    byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
+                        .Where(x => x % 2 == 0)
+                        .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
+                        .ToArray();
+                    data = DecryptData(data, Key);
+                }
+
+                Window viewWindow = new ImageWindow(resource.FileName, data);
+                viewWindow.Show();
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Not supported else...");
+            }
+        }
+
         private void ExportResourceButtonClick(object sender, RoutedEventArgs e)
         {
             System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;

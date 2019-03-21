@@ -58,6 +58,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ImageWindow.xaml.cs">
+      <DependentUpon>ImageWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="uchardet\ByteBuffer.cs" />
     <Compile Include="uchardet\Constants.cs" />
     <Compile Include="uchardet\ICharsetListener.cs" />
@@ -117,6 +120,13 @@
     <Compile Include="uchardet\Prober\StateMachine\UTF8SMModel.cs" />
     <Compile Include="uchardet\Prober\UTF8Prober.cs" />
     <Compile Include="uchardet\UniversalDetector.cs" />
+    <Compile Include="ViewWindow.xaml.cs">
+      <DependentUpon>ViewWindow.xaml</DependentUpon>
+    </Compile>
+    <Page Include="ImageWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -131,6 +141,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="PlayWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ViewWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
