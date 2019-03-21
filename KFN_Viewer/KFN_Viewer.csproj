@@ -61,6 +61,8 @@
     <Compile Include="ImageWindow.xaml.cs">
       <DependentUpon>ImageWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Themes\LeftMarginMultiplierConverter.cs" />
+    <Compile Include="Themes\TreeViewItemExtensions.cs" />
     <Compile Include="uchardet\ByteBuffer.cs" />
     <Compile Include="uchardet\Constants.cs" />
     <Compile Include="uchardet\ICharsetListener.cs" />
@@ -143,6 +145,10 @@
     <Page Include="PlayWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\Styles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="ViewWindow.xaml">
       <SubType>Designer</SubType>

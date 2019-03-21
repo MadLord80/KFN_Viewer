@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KFN_Viewer"
         mc:Ignorable="d"
-        Title="KFN Viewer" Height="752.22" Width="954.712">
+        Title="KFN Viewer" Height="752.22" Width="954.712"
+        Style="{StaticResource {x:Type Window}}">
     <Grid Margin="10,0,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="155*"/>
