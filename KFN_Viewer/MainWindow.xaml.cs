@@ -42,10 +42,86 @@ namespace KFN_Viewer
             FilesEncodingElement.IsEnabled = false;
 
             OpenFileDialog.Filter = "KFN files (*.kfn)|*.kfn|All files (*.*)|*.*";
+
+            //resourcesView init
+            GridView resourceGrid = new GridView
+            {
+                ColumnHeaderContainerStyle =
+                    System.Windows.Application.Current.Resources["GridViewColumnHeaderStyle"] as Style
+            };
+            resourceGrid.Columns.Add(new GridViewColumn() {
+                Header = "AES Enc",
+                Width = 60,
+                DisplayMemberBinding = new System.Windows.Data.Binding("IsEncrypted")
+            });
+            resourceGrid.Columns.Add(new GridViewColumn() {
+                Header = "Type",
+                DisplayMemberBinding = new System.Windows.Data.Binding("FileType")
+            });
+            resourceGrid.Columns.Add(new GridViewColumn()
+            {
+                Header = "Name",
+                DisplayMemberBinding = new System.Windows.Data.Binding("FileName")
+            });
+            FrameworkElementFactory exportButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
+            exportButtonFactory.SetValue(ContentProperty, "Export");
+            exportButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
+            exportButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
+            exportButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ExportResourceButtonClick));
+            DataTemplate exportButtonCell = new DataTemplate() { VisualTree = exportButtonFactory };
+            resourceGrid.Columns.Add(new GridViewColumn(){ CellTemplate = exportButtonCell });
+
+            GridViewColumn viewColumn = new GridViewColumn();
+            DataTemplate viewColumnTemplate = new DataTemplate();
+            FrameworkElementFactory viewButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
+            viewButtonFactory.SetValue(ContentProperty, "View");
+            viewButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
+            viewButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
+            viewButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ViewResourceButtonClick));
+
+            Style viewColumnStyle = new Style(typeof(System.Windows.Controls.DataGridCell));
+            DataTrigger viewCellTrigger = new DataTrigger();
+            System.Windows.Data.Binding viewCellTriggerBinding = new System.Windows.Data.Binding("FileType");
+            viewCellTrigger.Binding = viewCellTriggerBinding;
+            viewCellTrigger.Value = "Lyrics";
+            Setter viewCellTriggerSetter = new Setter { Property = ContentTemplateProperty };
+            DataTemplate viewColumnEmptyTemplate = new DataTemplate();
+            FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
+            viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
+            viewCellTriggerSetter.Value = viewColumnEmptyTemplate;
+            viewCellTrigger.Setters.Add(viewCellTriggerSetter);
+            viewColumnStyle.Triggers.Add(viewCellTrigger);
+
+            viewColumnTemplate.VisualTree = viewButtonFactory;
+            //ContentControl viewColumnContentControl = new ContentControl();
+            //viewColumnContentControl.Style = viewColumnStyle;
+            //viewColumnTemplate.Triggers.Add(viewCellTrigger);
+            viewColumn.CellTemplate = viewColumnTemplate;
+            //viewColumn.CellTemplate = viewColumnEmptyTemplate;
+            resourceGrid.Columns.Add(viewColumn);
+
+            resourcesView.View = resourceGrid;
+
 #if !DEBUG
             testButton.Visibility = Visibility.Hidden;               
 #endif
         }
+
+        //private class ViewButtonTemplateSelector : DataTemplateSelector
+        //{
+        //    DataTemplate viewColumnTemplate = new DataTemplate();
+
+        //    public override DataTemplate SelectTemplate(object item, DependencyObject container)
+        //    {
+        //        FrameworkElementFactory viewButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
+        //        viewButtonFactory.SetValue(ContentProperty, "View");
+        //        viewButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
+        //        viewButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
+        //        viewButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ViewResourceButtonClick));
+
+        //        //return (item is ActionInputViewModel) ? InputTemplate : OutputTemplate;
+        //    }
+        //}
 
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
         {
@@ -290,9 +366,6 @@ namespace KFN_Viewer
                 }
 
                 string text = new string(Encoding.GetEncoding(detEncoding).GetChars(data));
-                //string text = new string(Encoding.UTF8.GetChars(data));
-                //byte[] dbytes = Encoding.UTF8.GetBytes(text);
-                //text = new string(Encoding.GetEncoding(1251).GetChars(dbytes));
                 Window viewWindow = new ViewWindow(
                     resource.FileName, 
                     text, 
@@ -382,10 +455,14 @@ namespace KFN_Viewer
                 foreach (var c in gv.Columns)
                 {
                     // Code below was found in GridViewColumnHeader.OnGripperDoubleClicked() event handler (using Reflector)
-                    // i.e. it is the same code that is executed when the gripper is double clicked
+                    // i.e. it is the almost same code that is executed when the gripper is double clicked
                     if (double.IsNaN(c.Width))
                     {
                         c.Width = c.ActualWidth;
+                    }
+                    else
+                    {
+                        continue;
                     }
                     c.Width = double.NaN;
                 }
@@ -394,10 +471,12 @@ namespace KFN_Viewer
 
         private byte[] DecryptData(byte[] data, byte[] Key)
         {
-            RijndaelManaged aes = new RijndaelManaged();
-            aes.KeySize = 128;
-            aes.Padding = PaddingMode.None;
-            aes.Mode = CipherMode.ECB;
+            RijndaelManaged aes = new RijndaelManaged
+            {
+                KeySize = 128,
+                Padding = PaddingMode.None,
+                Mode = CipherMode.ECB
+            };
             using (ICryptoTransform decrypt = aes.CreateDecryptor(Key, null))
             {
                 byte[] dest = decrypt.TransformFinalBlock(data, 0, data.Length);

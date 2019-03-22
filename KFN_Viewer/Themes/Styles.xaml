@@ -140,6 +140,7 @@
         <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
     </Style>
     <Style TargetType="{x:Type Window}">
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontFamily" Value="Calibri light"/>
         <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
         <Setter Property="Background" Value="{StaticResource WindowBackgroundBrush}"/>
@@ -1246,6 +1247,7 @@
 
 
     <Style TargetType="{x:Type Button}">
+        <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource ButtonFocusVisual}"/>
         <Setter Property="Background" Value="{StaticResource ButtonBackground}"/>
         <Setter Property="BorderBrush" Value="{StaticResource ButtonBorder}"/>

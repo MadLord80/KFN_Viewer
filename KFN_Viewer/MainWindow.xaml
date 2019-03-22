@@ -21,41 +21,46 @@
         <Label x:Name="fileNameLabel" Content="" HorizontalAlignment="Left" Margin="10,54,0,0" VerticalAlignment="Top" Width="919" FontSize="18"/>
         <Label Content="Properties:" HorizontalAlignment="Left" Margin="10,93,0,0" VerticalAlignment="Top" Width="133" FontSize="14"/>
         <Label Content="Resources:" HorizontalAlignment="Left" Margin="396,93,0,0" VerticalAlignment="Top" Width="133" FontSize="14"/>
-        <ListView x:Name="propertiesView" HorizontalAlignment="Left" Height="365" Margin="0,127,0,0" VerticalAlignment="Top" Width="374" Grid.RowSpan="2">
+        <ListView x:Name="propertiesView" HorizontalAlignment="Left" Height="365" Margin="0,127,0,0" VerticalAlignment="Top" Width="374" Grid.RowSpan="2" Style="{StaticResource ListViewWithGridViewStyle}">
+            <!--<ListView.ItemContainerStyle>
+                <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource ListViewItemGridViewStyle}">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="VerticalContentAlignment" Value="Center" />
+                </Style>
+            </ListView.ItemContainerStyle>-->
             <ListView.View>
-                <GridView>
-                    <GridViewColumn DisplayMemberBinding="{Binding Key}" Header="Name" Width="130">
-                    </GridViewColumn>
+                <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}">
+                    <GridViewColumn DisplayMemberBinding="{Binding Key}" Header="Name" Width="130"/>
                     <GridViewColumn DisplayMemberBinding="{Binding Value}" Header="Value"/>
                 </GridView>
             </ListView.View>
         </ListView>
-        <ListView x:Name="resourcesView" HorizontalAlignment="Left" Height="365" Margin="396,127,0,0" VerticalAlignment="Top" Width="523" Grid.RowSpan="2">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="AES Enc" DisplayMemberBinding="{Binding IsEncrypted}"/>
+        <ListView x:Name="resourcesView" HorizontalAlignment="Left" Height="365" Margin="396,127,0,0" VerticalAlignment="Top" Width="523" Grid.RowSpan="2" Style="{StaticResource ListViewWithGridViewStyle}">
+            <!--<ListView.View>
+                <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}">
+                    <GridViewColumn Header="AES Enc" DisplayMemberBinding="{Binding IsEncrypted}" Width="60"/>
                     <GridViewColumn Header="Type" DisplayMemberBinding="{Binding FileType}"/>
                     <GridViewColumn Header="Name" DisplayMemberBinding="{Binding FileName}"/>
                     <GridViewColumn>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Export" Click="ExportResourceButtonClick" CommandParameter="{Binding}"/>
+                                <Button Content="Export" Click="ExportResourceButtonClick" CommandParameter="{Binding}" Padding="5,0,5,0"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="View" Click="ViewResourceButtonClick" CommandParameter="{Binding}"/>
+                                <Button Content="View" Click="ViewResourceButtonClick" CommandParameter="{Binding}" Padding="5,0,5,0"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                 </GridView>
-            </ListView.View>
+            </ListView.View>-->
         </ListView>
         <Label Content="Unknown properties:" HorizontalAlignment="Left" Margin="0,187,0,0" VerticalAlignment="Top" Width="148" FontSize="14" Grid.Row="1"/>
         <Button x:Name="testButton" Content="Test" HorizontalAlignment="Left" Margin="160,10,0,0" VerticalAlignment="Top" Width="75" Click="TestButton_Click"/>
-        <Label Content="Auto detect is:" HorizontalAlignment="Left" Margin="659,8,0,0" VerticalAlignment="Top" Width="88"/>
+        <Label Content="Auto detect is:" HorizontalAlignment="Left" Margin="656,8,0,0" VerticalAlignment="Top" Width="91"/>
         <Label x:Name="AutoDetectedEncLabel" Content="" HorizontalAlignment="Left" Margin="747,8,0,0" VerticalAlignment="Top" Width="172"/>
         <Button x:Name="ExportAllButton" Content="Export all" HorizontalAlignment="Left" VerticalAlignment="Top" Width="96" Margin="823,97,0,0" IsEnabled="False" Click="ExportAllButton_Click"/>
 
