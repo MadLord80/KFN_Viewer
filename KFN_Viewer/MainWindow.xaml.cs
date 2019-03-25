@@ -78,26 +78,8 @@ namespace KFN_Viewer
             viewButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
             viewButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
             viewButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ViewResourceButtonClick));
-
-            Style viewColumnStyle = new Style(typeof(System.Windows.Controls.DataGridCell));
-            DataTrigger viewCellTrigger = new DataTrigger();
-            System.Windows.Data.Binding viewCellTriggerBinding = new System.Windows.Data.Binding("FileType");
-            viewCellTrigger.Binding = viewCellTriggerBinding;
-            viewCellTrigger.Value = "Lyrics";
-            Setter viewCellTriggerSetter = new Setter { Property = ContentTemplateProperty };
-            DataTemplate viewColumnEmptyTemplate = new DataTemplate();
-            FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
-            viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
-            viewCellTriggerSetter.Value = viewColumnEmptyTemplate;
-            viewCellTrigger.Setters.Add(viewCellTriggerSetter);
-            viewColumnStyle.Triggers.Add(viewCellTrigger);
-
             viewColumnTemplate.VisualTree = viewButtonFactory;
-            //ContentControl viewColumnContentControl = new ContentControl();
-            //viewColumnContentControl.Style = viewColumnStyle;
-            //viewColumnTemplate.Triggers.Add(viewCellTrigger);
-            viewColumn.CellTemplate = viewColumnTemplate;
-            //viewColumn.CellTemplate = viewColumnEmptyTemplate;
+            viewColumn.CellTemplateSelector = new ViewCellTemplateSelector(viewColumnTemplate);
             resourceGrid.Columns.Add(viewColumn);
 
             resourcesView.View = resourceGrid;
@@ -106,22 +88,6 @@ namespace KFN_Viewer
             testButton.Visibility = Visibility.Hidden;               
 #endif
         }
-
-        //private class ViewButtonTemplateSelector : DataTemplateSelector
-        //{
-        //    DataTemplate viewColumnTemplate = new DataTemplate();
-
-        //    public override DataTemplate SelectTemplate(object item, DependencyObject container)
-        //    {
-        //        FrameworkElementFactory viewButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
-        //        viewButtonFactory.SetValue(ContentProperty, "View");
-        //        viewButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
-        //        viewButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
-        //        viewButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ViewResourceButtonClick));
-
-        //        //return (item is ActionInputViewModel) ? InputTemplate : OutputTemplate;
-        //    }
-        //}
 
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
         {
@@ -325,7 +291,7 @@ namespace KFN_Viewer
             }
         }
 
-        private void ViewResourceButtonClick(object sender, RoutedEventArgs e)
+        public void ViewResourceButtonClick(object sender, RoutedEventArgs e)
         {
             System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
             KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
@@ -500,5 +466,29 @@ namespace KFN_Viewer
         // karaore text
         //https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/how-to-create-outlined-text
         //https://ru.stackoverflow.com/questions/630777/%D0%97%D0%B0%D0%BA%D1%80%D0%B0%D1%81%D0%B8%D1%82%D1%8C-%D1%82%D0%B5%D0%BA%D1%81%D1%82-%D1%81%D0%BB%D0%BE%D0%B2%D0%BE-%D0%B1%D1%83%D0%BA%D0%B2%D1%83
+    }
+
+    public class ViewCellTemplateSelector : DataTemplateSelector
+    {
+        private DataTemplate t1;
+
+        public ViewCellTemplateSelector(DataTemplate template1)
+        {
+            this.t1 = template1;
+        }
+
+        public override DataTemplate SelectTemplate(object item, DependencyObject container)
+        {
+            KFN.ResorceFile resource = (item as KFN.ResorceFile);
+            if (resource.FileType == "Text" || resource.FileType == "Lyrics" || resource.FileType == "Image")
+            {
+                return this.t1;
+            }
+
+            DataTemplate viewColumnEmptyTemplate = new DataTemplate();
+            FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
+            viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
+            return viewColumnEmptyTemplate;
+        }
     }
 }
