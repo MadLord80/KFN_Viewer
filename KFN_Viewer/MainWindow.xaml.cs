@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.IO;
 using System.Security.Cryptography;
 using Mozilla.NUniversalCharDet;
+using System.Text.RegularExpressions;
 
 namespace KFN_Viewer
 {
@@ -71,7 +72,6 @@ namespace KFN_Viewer
             DataTemplate exportButtonCell = new DataTemplate() { VisualTree = exportButtonFactory };
             resourceGrid.Columns.Add(new GridViewColumn(){ CellTemplate = exportButtonCell });
 
-            GridViewColumn viewColumn = new GridViewColumn();
             DataTemplate viewColumnTemplate = new DataTemplate();
             FrameworkElementFactory viewButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
             viewButtonFactory.SetValue(ContentProperty, "View");
@@ -79,8 +79,19 @@ namespace KFN_Viewer
             viewButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
             viewButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ViewResourceButtonClick));
             viewColumnTemplate.VisualTree = viewButtonFactory;
-            viewColumn.CellTemplateSelector = new ViewCellTemplateSelector(viewColumnTemplate);
-            resourceGrid.Columns.Add(viewColumn);
+            resourceGrid.Columns.Add(new GridViewColumn() { CellTemplateSelector = new ViewCellTemplateSelector(viewColumnTemplate) });
+
+            DataTemplate lyricColumnTemplate = new DataTemplate();
+            FrameworkElementFactory lyricButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
+            lyricButtonFactory.SetValue(ContentProperty, "To lrc");
+            lyricButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
+            lyricButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
+            lyricButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ExportToLrcButtonClick));
+            lyricColumnTemplate.VisualTree = lyricButtonFactory;
+            resourceGrid.Columns.Add(new GridViewColumn() {
+                CellTemplateSelector = new LyricCellTemplateSelector(lyricColumnTemplate),
+                Width = 100
+            });
 
             resourcesView.View = resourceGrid;
 
@@ -291,6 +302,90 @@ namespace KFN_Viewer
             }
         }
 
+        public void ExportToLrcButtonClick(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
+            KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
+
+            byte[] data = new byte[resource.FileLength];
+            using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
+            {
+                fs.Position = endOfHeaderOffset + resource.FileOffset;
+                fs.Read(data, 0, data.Length);
+            }
+
+            if (resource.IsEncrypted)
+            {
+                byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
+                    .Where(x => x % 2 == 0)
+                    .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
+                    .ToArray();
+                data = DecryptData(data, Key);
+            }
+
+            string text = new string(Encoding.UTF8.GetChars(data));
+
+            Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
+            Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
+            string[] words = { };
+            int[] timings = { };
+            foreach (string str in text.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                Match texts = textRegex.Match(str);
+                Match syncs = syncRegex.Match(str);
+                if (texts.Groups.Count > 1)
+                {
+                    //string textLine = texts.Groups[1].Value.Replace("=", "");
+                    string textLine = texts.Groups[1].Value;
+                    //string[] linewords = (textLine.Length > 0)
+                    //    ? textLine.Split(new string[] { " ", "/" }, StringSplitOptions.RemoveEmptyEntries)
+                    //    : new string[] { "" };
+                    string[] linewords = textLine.Split(new string[] { " ", "/" }, StringSplitOptions.RemoveEmptyEntries);
+                    Array.Resize(ref words, words.Length + linewords.Length);
+                    Array.Copy(linewords, 0, words, words.Length - linewords.Length, linewords.Length);
+                }
+                else if (syncs.Groups.Count > 1)
+                {
+                    //string songLine = syncs.Groups[1].Value.Replace("=", "");
+                    string songLine = syncs.Groups[1].Value;
+                    //if (songLine.Length == 0) { continue; }
+                    int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => int.Parse(s)).ToArray();
+                    Array.Resize(ref timings, timings.Length + linetimes.Length);
+                    Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
+                }
+            }
+
+            if (timings.Length < words.Length)
+            {
+                System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
+                return;
+            }
+
+            string textStrings = "";
+            for (int i = 0; i < words.Length; i++)
+            {
+                decimal time = Convert.ToDecimal(timings[i]);
+                decimal min = Math.Truncate(time / 6000);
+                decimal sec = Math.Truncate((time - min * 6000) / 100);
+                decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
+                textStrings += "[" + String.Format("{0:D2}", (int)min) + ":" 
+                    + String.Format("{0:D2}", (int)sec) + "." 
+                    + String.Format("{0:D2}", (int)msec) + "]" + words[i] + "\n";
+            }
+            KeyValuePair<string, string> artistProp = properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+            KeyValuePair<string, string> titleProp = properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+            if (titleProp.Value != null) { textStrings = "[ti:" + titleProp.Value + "]\n" + textStrings; }
+            if (artistProp.Value != null) { textStrings = "[ar:" + artistProp.Value + "]\n" + textStrings; }
+
+            Window viewWindow = new ViewWindow(
+                resource.FileName,
+                textStrings,
+                Encoding.GetEncodings().Where(en => en.CodePage == 65001).First().DisplayName
+            );
+            viewWindow.Show();
+        }
+
         public void ViewResourceButtonClick(object sender, RoutedEventArgs e)
         {
             System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
@@ -359,10 +454,6 @@ namespace KFN_Viewer
 
                 Window viewWindow = new ImageWindow(resource.FileName, data);
                 viewWindow.Show();
-            }
-            else
-            {
-                System.Windows.MessageBox.Show("Not supported else...");
             }
         }
 
@@ -481,6 +572,30 @@ namespace KFN_Viewer
         {
             KFN.ResorceFile resource = (item as KFN.ResorceFile);
             if (resource.FileType == "Text" || resource.FileType == "Lyrics" || resource.FileType == "Image")
+            {
+                return this.t1;
+            }
+
+            DataTemplate viewColumnEmptyTemplate = new DataTemplate();
+            FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
+            viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
+            return viewColumnEmptyTemplate;
+        }
+    }
+
+    public class LyricCellTemplateSelector : DataTemplateSelector
+    {
+        private DataTemplate t1;
+
+        public LyricCellTemplateSelector(DataTemplate template1)
+        {
+            this.t1 = template1;
+        }
+
+        public override DataTemplate SelectTemplate(object item, DependencyObject container)
+        {
+            KFN.ResorceFile resource = (item as KFN.ResorceFile);
+            if (resource.FileType == "Lyrics")
             {
                 return this.t1;
             }
