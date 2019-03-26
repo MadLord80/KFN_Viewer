@@ -5,5 +5,5 @@ TODO:
 - [x] encoding
 - [x] .milk
 - [ ] advanced export
-- [ ] lyrics to lrc
+- [x] lyrics to lrc
 
