@@ -44,18 +44,28 @@ namespace KFN_Viewer
 
             OpenFileDialog.Filter = "KFN files (*.kfn)|*.kfn|All files (*.*)|*.*";
 
-            //resourcesView init
+            ResourceViewInit();
+            
+#if !DEBUG
+            testButton.Visibility = Visibility.Hidden;               
+#endif
+        }
+
+        private void ResourceViewInit()
+        {
             GridView resourceGrid = new GridView
             {
                 ColumnHeaderContainerStyle =
                     System.Windows.Application.Current.Resources["GridViewColumnHeaderStyle"] as Style
             };
-            resourceGrid.Columns.Add(new GridViewColumn() {
+            resourceGrid.Columns.Add(new GridViewColumn()
+            {
                 Header = "AES Enc",
                 Width = 60,
                 DisplayMemberBinding = new System.Windows.Data.Binding("IsEncrypted")
             });
-            resourceGrid.Columns.Add(new GridViewColumn() {
+            resourceGrid.Columns.Add(new GridViewColumn()
+            {
                 Header = "Type",
                 DisplayMemberBinding = new System.Windows.Data.Binding("FileType")
             });
@@ -70,7 +80,7 @@ namespace KFN_Viewer
             exportButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
             exportButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ExportResourceButtonClick));
             DataTemplate exportButtonCell = new DataTemplate() { VisualTree = exportButtonFactory };
-            resourceGrid.Columns.Add(new GridViewColumn(){ CellTemplate = exportButtonCell });
+            resourceGrid.Columns.Add(new GridViewColumn() { CellTemplate = exportButtonCell });
 
             DataTemplate viewColumnTemplate = new DataTemplate();
             FrameworkElementFactory viewButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
@@ -88,16 +98,13 @@ namespace KFN_Viewer
             lyricButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
             lyricButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ExportToLrcButtonClick));
             lyricColumnTemplate.VisualTree = lyricButtonFactory;
-            resourceGrid.Columns.Add(new GridViewColumn() {
+            resourceGrid.Columns.Add(new GridViewColumn()
+            {
                 CellTemplateSelector = new LyricCellTemplateSelector(lyricColumnTemplate),
                 Width = 100
             });
 
             resourcesView.View = resourceGrid;
-
-#if !DEBUG
-            testButton.Visibility = Visibility.Hidden;               
-#endif
         }
 
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
@@ -296,7 +303,29 @@ namespace KFN_Viewer
 
                 foreach (KFN.ResorceFile resource in resources)
                 {
-                    ExportResource(resource, exportFolder);
+                    ExportResourceToFile(resource, exportFolder);
+                    if (resource.FileType == "Lyrics")
+                    {
+                        byte[] data = GetDataFromResource(resource);
+                        // try to convert to Extended LRC
+                        string lrcText = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
+                        if (lrcText != null)
+                        {
+                            //1,I,ddt_-_chto_takoe_osen'.mp3
+                            KeyValuePair<string, string> sourceProp = properties.Where(kv => kv.Key == "Source").FirstOrDefault();
+                            string sourceName = (sourceProp.Value != null) 
+                                ? sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last()
+                                : resource.FileName;
+                            FileInfo sourceFile = new FileInfo(sourceName);
+                            string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
+
+                            ExportTextToFile(
+                                lrcFileName, 
+                                Encoding.Convert(Encoding.UTF8, Encoding.GetEncoding(1251), Encoding.UTF8.GetBytes(lrcText)),
+                                exportFolder
+                            );
+                        }
+                    }
                 }
                 System.Windows.MessageBox.Show("Export OK: " + exportFolder);
             }
@@ -307,76 +336,11 @@ namespace KFN_Viewer
             System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
             KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
 
-            byte[] data = new byte[resource.FileLength];
-            using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
-            {
-                fs.Position = endOfHeaderOffset + resource.FileOffset;
-                fs.Read(data, 0, data.Length);
-            }
+            byte[] data = GetDataFromResource(resource);
 
-            if (resource.IsEncrypted)
-            {
-                byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
-                    .Where(x => x % 2 == 0)
-                    .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
-                    .ToArray();
-                data = DecryptData(data, Key);
-            }
-
-            string text = new string(Encoding.UTF8.GetChars(data));
-
-            Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
-            Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
-            string[] words = { };
-            int[] timings = { };
-            foreach (string str in text.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                Match texts = textRegex.Match(str);
-                Match syncs = syncRegex.Match(str);
-                if (texts.Groups.Count > 1)
-                {
-                    //string textLine = texts.Groups[1].Value.Replace("=", "");
-                    string textLine = texts.Groups[1].Value;
-                    //string[] linewords = (textLine.Length > 0)
-                    //    ? textLine.Split(new string[] { " ", "/" }, StringSplitOptions.RemoveEmptyEntries)
-                    //    : new string[] { "" };
-                    string[] linewords = textLine.Split(new string[] { " ", "/" }, StringSplitOptions.RemoveEmptyEntries);
-                    Array.Resize(ref words, words.Length + linewords.Length);
-                    Array.Copy(linewords, 0, words, words.Length - linewords.Length, linewords.Length);
-                }
-                else if (syncs.Groups.Count > 1)
-                {
-                    //string songLine = syncs.Groups[1].Value.Replace("=", "");
-                    string songLine = syncs.Groups[1].Value;
-                    //if (songLine.Length == 0) { continue; }
-                    int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(s => int.Parse(s)).ToArray();
-                    Array.Resize(ref timings, timings.Length + linetimes.Length);
-                    Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
-                }
-            }
-
-            if (timings.Length < words.Length)
-            {
-                System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
-                return;
-            }
-
-            string textStrings = "";
-            for (int i = 0; i < words.Length; i++)
-            {
-                decimal time = Convert.ToDecimal(timings[i]);
-                decimal min = Math.Truncate(time / 6000);
-                decimal sec = Math.Truncate((time - min * 6000) / 100);
-                decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
-                textStrings += "[" + String.Format("{0:D2}", (int)min) + ":" 
-                    + String.Format("{0:D2}", (int)sec) + "." 
-                    + String.Format("{0:D2}", (int)msec) + "]" + words[i] + "\n";
-            }
-            KeyValuePair<string, string> artistProp = properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
-            KeyValuePair<string, string> titleProp = properties.Where(kv => kv.Key == "Title").FirstOrDefault();
-            if (titleProp.Value != null) { textStrings = "[ti:" + titleProp.Value + "]\n" + textStrings; }
-            if (artistProp.Value != null) { textStrings = "[ar:" + artistProp.Value + "]\n" + textStrings; }
+            //string textStrings = INIToSimpleLRC(new string(Encoding.UTF8.GetChars(data)));
+            string textStrings = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
+            if (textStrings == null) { return; }
 
             Window viewWindow = new ViewWindow(
                 resource.FileName,
@@ -386,6 +350,137 @@ namespace KFN_Viewer
             viewWindow.Show();
         }
 
+        //private string INIToSimpleLRC(string iniText)
+        //{
+        //    Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
+        //    Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
+        //    string[] words = { };
+        //    int[] timings = { };
+        //    // TODO: by lines! not by delimeters!
+        //    foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+        //    {
+        //        Match texts = textRegex.Match(str);
+        //        Match syncs = syncRegex.Match(str);
+        //        if (texts.Groups.Count > 1)
+        //        {
+        //            string textLine = texts.Groups[1].Value;
+        //            string[] linewords = textLine.Split(new string[] { " ", "/" }, StringSplitOptions.RemoveEmptyEntries);
+        //            Array.Resize(ref words, words.Length + linewords.Length);
+        //            Array.Copy(linewords, 0, words, words.Length - linewords.Length, linewords.Length);
+        //        }
+        //        else if (syncs.Groups.Count > 1)
+        //        {
+        //            string songLine = syncs.Groups[1].Value;
+        //            int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+        //                .Select(s => int.Parse(s)).ToArray();
+        //            Array.Resize(ref timings, timings.Length + linetimes.Length);
+        //            Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
+        //        }
+        //    }
+
+        //    if (timings.Length < words.Length)
+        //    {
+        //        System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
+        //        return null;
+        //    }
+
+        //    string lrcText = "";
+        //    if (words.Length == 0) { return null; }
+        //    for (int i = 0; i < words.Length; i++)
+        //    {
+        //        decimal time = Convert.ToDecimal(timings[i]);
+        //        decimal min = Math.Truncate(time / 6000);
+        //        decimal sec = Math.Truncate((time - min * 6000) / 100);
+        //        decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
+        //        lrcText += "[" + String.Format("{0:D2}", (int)min) + ":"
+        //            + String.Format("{0:D2}", (int)sec) + "."
+        //            + String.Format("{0:D2}", (int)msec) + "]" + words[i] + "\n";
+        //    }
+        //    KeyValuePair<string, string> artistProp = properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+        //    KeyValuePair<string, string> titleProp = properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+        //    if (titleProp.Value != null) { lrcText = "[ti:" + titleProp.Value + "]\n" + lrcText; }
+        //    if (artistProp.Value != null) { lrcText = "[ar:" + artistProp.Value + "]\n" + lrcText; }
+
+        //    return lrcText;
+        //}
+
+        private string INIToExtLRC(string iniText)
+        {
+            Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
+            Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
+            string[] words = { };
+            int[] timings = { };
+            int lines = 0;
+            foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                Match texts = textRegex.Match(str);
+                Match syncs = syncRegex.Match(str);
+                if (texts.Groups.Count > 1)
+                {
+                    string textLine = texts.Groups[1].Value;
+                    textLine = textLine.Replace(" ", " /");
+                    string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
+                    // + end of line
+                    Array.Resize(ref words, words.Length + linewords.Length + 1);
+                    Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
+                    lines++;
+                }
+                else if (syncs.Groups.Count > 1)
+                {
+                    string songLine = syncs.Groups[1].Value;
+                    int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => int.Parse(s)).ToArray();
+                    Array.Resize(ref timings, timings.Length + linetimes.Length);
+                    Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
+                }
+            }
+
+            if (timings.Length < words.Length - lines)
+            {
+                System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
+                return null;
+            }
+
+            string lrcText = "";
+            if (words.Length == 0) { return null; }
+            bool newLine = true;
+            int timeIndex = 0;
+            for (int i = 0; i < words.Length; i++)
+            {
+                string startTag = (newLine) ? "[" : "<";
+                string endTag = (newLine) ? "]" : ">";
+                
+                // in end of line: +45 msec
+                int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
+                decimal time = Convert.ToDecimal(timing);
+                decimal min = Math.Truncate(time / 6000);
+                decimal sec = Math.Truncate((time - min * 6000) / 100);
+                decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
+
+                lrcText += startTag + String.Format("{0:D2}", (int)min) + ":"
+                        + String.Format("{0:D2}", (int)sec) + "."
+                        + String.Format("{0:D2}", (int)msec) + endTag;
+
+                if (words[i] != null)
+                {
+                    lrcText += words[i];
+                    newLine = false;
+                    timeIndex++;
+                }
+                else
+                {
+                    lrcText += "\n";
+                    newLine = true;
+                }                
+            }
+            KeyValuePair<string, string> artistProp = properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+            KeyValuePair<string, string> titleProp = properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+            if (titleProp.Value != null) { lrcText = "[ti:" + titleProp.Value + "]\n" + lrcText; }
+            if (artistProp.Value != null) { lrcText = "[ar:" + artistProp.Value + "]\n" + lrcText; }
+
+            return lrcText;
+        }
+
         public void ViewResourceButtonClick(object sender, RoutedEventArgs e)
         {
             System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
@@ -393,21 +488,7 @@ namespace KFN_Viewer
 
             if (resource.FileType == "Text" || resource.FileType == "Lyrics")
             {
-                byte[] data = new byte[resource.FileLength];
-                using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
-                {
-                    fs.Position = endOfHeaderOffset + resource.FileOffset;
-                    fs.Read(data, 0, data.Length);
-                }
-
-                if (resource.IsEncrypted)
-                {
-                    byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
-                        .Where(x => x % 2 == 0)
-                        .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
-                        .ToArray();
-                    data = DecryptData(data, Key);
-                }
+                byte[] data = GetDataFromResource(resource);
 
                 //UTF-8
                 int detEncoding = 65001;
@@ -436,21 +517,7 @@ namespace KFN_Viewer
             }
             else if (resource.FileType == "Image")
             {
-                byte[] data = new byte[resource.FileLength];
-                using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
-                {
-                    fs.Position = endOfHeaderOffset + resource.FileOffset;
-                    fs.Read(data, 0, data.Length);
-                }
-
-                if (resource.IsEncrypted)
-                {
-                    byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
-                        .Where(x => x % 2 == 0)
-                        .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
-                        .ToArray();
-                    data = DecryptData(data, Key);
-                }
+                byte[] data = GetDataFromResource(resource);
 
                 Window viewWindow = new ImageWindow(resource.FileName, data);
                 viewWindow.Show();
@@ -476,32 +543,25 @@ namespace KFN_Viewer
                     return;
                 }
 
-                ExportResource(resource, exportFolder);
+                ExportResourceToFile(resource, exportFolder);
                 System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + resource.FileName);
             }
         }
 
-        private void ExportResource(KFN.ResorceFile resource, string folder)
+        private void ExportResourceToFile(KFN.ResorceFile resource, string folder)
         {
-            byte[] data = new byte[resource.FileLength];
-            using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
-            {
-                fs.Position = endOfHeaderOffset + resource.FileOffset;
-                fs.Read(data, 0, data.Length);
-            }
-
-            if (resource.IsEncrypted)
-            {
-                byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
-                    .Where(x => x % 2 == 0)
-                    .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
-                    .ToArray();
-                data = DecryptData(data, Key);
-            }
+            byte[] data = GetDataFromResource(resource);
 
             using (FileStream fs = new FileStream(folder + "\\" + resource.FileName, FileMode.Create, FileAccess.Write))
             {
                 fs.Write(data, 0, data.Length);
+            }
+        }
+        private void ExportTextToFile(string fileName, byte[] text, string folder)
+        {
+            using (FileStream fs = new FileStream(folder + "\\" + fileName, FileMode.Create, FileAccess.Write))
+            {
+                fs.Write(text, 0, text.Length);
             }
         }
 
@@ -524,6 +584,26 @@ namespace KFN_Viewer
                     c.Width = double.NaN;
                 }
             }
+        }
+
+        private byte[] GetDataFromResource(KFN.ResorceFile resource)
+        {
+            byte[] data = new byte[resource.FileLength];
+            using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
+            {
+                fs.Position = endOfHeaderOffset + resource.FileOffset;
+                fs.Read(data, 0, data.Length);
+            }
+
+            if (resource.IsEncrypted)
+            {
+                byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
+                    .Where(x => x % 2 == 0)
+                    .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
+                    .ToArray();
+                data = DecryptData(data, Key);
+            }
+            return data;
         }
 
         private byte[] DecryptData(byte[] data, byte[] Key)
