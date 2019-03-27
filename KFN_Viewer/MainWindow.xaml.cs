@@ -101,7 +101,20 @@ namespace KFN_Viewer
             resourceGrid.Columns.Add(new GridViewColumn()
             {
                 CellTemplateSelector = new LyricCellTemplateSelector(lyricColumnTemplate),
-                Width = 100
+                Width = 60
+            });
+
+            DataTemplate elyrColumnTemplate = new DataTemplate();
+            FrameworkElementFactory elyrButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
+            elyrButtonFactory.SetValue(ContentProperty, "To elyr");
+            elyrButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
+            elyrButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
+            elyrButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ExportToElyrButtonClick));
+            elyrColumnTemplate.VisualTree = elyrButtonFactory;
+            resourceGrid.Columns.Add(new GridViewColumn()
+            {
+                CellTemplateSelector = new LyricCellTemplateSelector(elyrColumnTemplate),
+                Width = 60
             });
 
             resourcesView.View = resourceGrid;
@@ -307,8 +320,9 @@ namespace KFN_Viewer
                     if (resource.FileType == "Lyrics")
                     {
                         byte[] data = GetDataFromResource(resource);
-                        // try to convert to Extended LRC
+                        // try to convert to Extended LRC and Elyr
                         string lrcText = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
+                        string elyrText = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
                         if (lrcText != null)
                         {
                             //1,I,ddt_-_chto_takoe_osen'.mp3
@@ -318,10 +332,22 @@ namespace KFN_Viewer
                                 : resource.FileName;
                             FileInfo sourceFile = new FileInfo(sourceName);
                             string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
+                            string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
 
                             ExportTextToFile(
                                 lrcFileName, 
                                 Encoding.Convert(Encoding.UTF8, Encoding.GetEncoding(1251), Encoding.UTF8.GetBytes(lrcText)),
+                                exportFolder
+                            );
+
+                            byte[] bom = new byte[] { 0xFF, 0xFE };
+                            string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
+                            byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.BigEndianUnicode, Encoding.UTF8.GetBytes(elyrHeader + elyrText));
+                            Array.Resize(ref bom, bom.Length + elyr.Length - 1);
+                            Array.Copy(elyr, 1, bom, 2, elyr.Length - 1);
+                            ExportTextToFile(
+                                elyrFileName,
+                                bom,
                                 exportFolder
                             );
                         }
@@ -338,7 +364,6 @@ namespace KFN_Viewer
 
             byte[] data = GetDataFromResource(resource);
 
-            //string textStrings = INIToSimpleLRC(new string(Encoding.UTF8.GetChars(data)));
             string textStrings = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
             if (textStrings == null) { return; }
 
@@ -350,59 +375,89 @@ namespace KFN_Viewer
             viewWindow.Show();
         }
 
-        //private string INIToSimpleLRC(string iniText)
-        //{
-        //    Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
-        //    Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
-        //    string[] words = { };
-        //    int[] timings = { };
-        //    // TODO: by lines! not by delimeters!
-        //    foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
-        //    {
-        //        Match texts = textRegex.Match(str);
-        //        Match syncs = syncRegex.Match(str);
-        //        if (texts.Groups.Count > 1)
-        //        {
-        //            string textLine = texts.Groups[1].Value;
-        //            string[] linewords = textLine.Split(new string[] { " ", "/" }, StringSplitOptions.RemoveEmptyEntries);
-        //            Array.Resize(ref words, words.Length + linewords.Length);
-        //            Array.Copy(linewords, 0, words, words.Length - linewords.Length, linewords.Length);
-        //        }
-        //        else if (syncs.Groups.Count > 1)
-        //        {
-        //            string songLine = syncs.Groups[1].Value;
-        //            int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-        //                .Select(s => int.Parse(s)).ToArray();
-        //            Array.Resize(ref timings, timings.Length + linetimes.Length);
-        //            Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
-        //        }
-        //    }
+        public void ExportToElyrButtonClick(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
+            KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
 
-        //    if (timings.Length < words.Length)
-        //    {
-        //        System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
-        //        return null;
-        //    }
+            byte[] data = GetDataFromResource(resource);
 
-        //    string lrcText = "";
-        //    if (words.Length == 0) { return null; }
-        //    for (int i = 0; i < words.Length; i++)
-        //    {
-        //        decimal time = Convert.ToDecimal(timings[i]);
-        //        decimal min = Math.Truncate(time / 6000);
-        //        decimal sec = Math.Truncate((time - min * 6000) / 100);
-        //        decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
-        //        lrcText += "[" + String.Format("{0:D2}", (int)min) + ":"
-        //            + String.Format("{0:D2}", (int)sec) + "."
-        //            + String.Format("{0:D2}", (int)msec) + "]" + words[i] + "\n";
-        //    }
-        //    KeyValuePair<string, string> artistProp = properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
-        //    KeyValuePair<string, string> titleProp = properties.Where(kv => kv.Key == "Title").FirstOrDefault();
-        //    if (titleProp.Value != null) { lrcText = "[ti:" + titleProp.Value + "]\n" + lrcText; }
-        //    if (artistProp.Value != null) { lrcText = "[ar:" + artistProp.Value + "]\n" + lrcText; }
+            string textStrings = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
+            if (textStrings == null) { return; }
 
-        //    return lrcText;
-        //}
+            Window viewWindow = new ViewWindow(
+                resource.FileName,
+                textStrings,
+                Encoding.GetEncodings().Where(en => en.CodePage == 65001).First().DisplayName
+            );
+            viewWindow.Show();
+        }
+
+        private string INIToELYR(string iniText)
+        {
+            Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
+            Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
+            string[] words = { };
+            int[] timings = { };
+            int lines = 0;
+            foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                Match texts = textRegex.Match(str);
+                Match syncs = syncRegex.Match(str);
+                if (texts.Groups.Count > 1)
+                {
+                    string textLine = texts.Groups[1].Value;
+                    textLine = textLine.Replace(" ", " /");
+                    string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
+                    // + end of line
+                    Array.Resize(ref words, words.Length + linewords.Length + 1);
+                    Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
+                    lines++;
+                }
+                else if (syncs.Groups.Count > 1)
+                {
+                    string songLine = syncs.Groups[1].Value;
+                    int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => int.Parse(s)).ToArray();
+                    Array.Resize(ref timings, timings.Length + linetimes.Length);
+                    Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
+                }
+            }
+
+            if (timings.Length < words.Length - lines)
+            {
+                System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
+                return null;
+            }
+
+            if (words.Length == 0) { return null; }
+            bool newLine = false;
+            int timeIndex = 1;
+            int timing = timings[0] * 10;
+            string elyrText = timing + ":" + timing + "=\\" + words[0] + "\r\n";
+            for (int i = 1; i < words.Length; i++)
+            {
+                if (!newLine)
+                {
+                    timing = timings[timeIndex] * 10;
+                    elyrText += timing + ":" + timing + "=";
+                }
+
+                if (words[i] != null)
+                {
+                    elyrText += words[i] + "\r\n";
+                    newLine = false;
+                    if (i < words.Length - 2) { timeIndex++; }
+                }
+                else
+                {
+                    elyrText += "\\";
+                    newLine = true;
+                }
+            }
+
+            return elyrText;
+        }
 
         private string INIToExtLRC(string iniText)
         {
