@@ -74,52 +74,47 @@ namespace KFN_Viewer
                 Header = "Name",
                 DisplayMemberBinding = new System.Windows.Data.Binding("FileName")
             });
-            FrameworkElementFactory exportButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
-            exportButtonFactory.SetValue(ContentProperty, "Export");
-            exportButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
-            exportButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
-            exportButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ExportResourceButtonClick));
-            DataTemplate exportButtonCell = new DataTemplate() { VisualTree = exportButtonFactory };
-            resourceGrid.Columns.Add(new GridViewColumn() { CellTemplate = exportButtonCell });
-
-            DataTemplate viewColumnTemplate = new DataTemplate();
-            FrameworkElementFactory viewButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
-            viewButtonFactory.SetValue(ContentProperty, "View");
-            viewButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
-            viewButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
-            viewButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ViewResourceButtonClick));
-            viewColumnTemplate.VisualTree = viewButtonFactory;
-            resourceGrid.Columns.Add(new GridViewColumn() { CellTemplateSelector = new ViewCellTemplateSelector(viewColumnTemplate) });
-
-            DataTemplate lyricColumnTemplate = new DataTemplate();
-            FrameworkElementFactory lyricButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
-            lyricButtonFactory.SetValue(ContentProperty, "To lrc");
-            lyricButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
-            lyricButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
-            lyricButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ExportToLrcButtonClick));
-            lyricColumnTemplate.VisualTree = lyricButtonFactory;
-            resourceGrid.Columns.Add(new GridViewColumn()
-            {
-                CellTemplateSelector = new LyricCellTemplateSelector(lyricColumnTemplate),
-                Width = 60
-            });
-
-            DataTemplate elyrColumnTemplate = new DataTemplate();
-            FrameworkElementFactory elyrButtonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
-            elyrButtonFactory.SetValue(ContentProperty, "To elyr");
-            elyrButtonFactory.SetValue(PaddingProperty, new Thickness(5, 0, 5, 0));
-            elyrButtonFactory.SetBinding(System.Windows.Controls.Button.CommandParameterProperty, new System.Windows.Data.Binding());
-            elyrButtonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(ExportToElyrButtonClick));
-            elyrColumnTemplate.VisualTree = elyrButtonFactory;
-            resourceGrid.Columns.Add(new GridViewColumn()
-            {
-                CellTemplateSelector = new LyricCellTemplateSelector(elyrColumnTemplate),
-                Width = 60
-            });
 
             resourcesView.View = resourceGrid;
+
+            System.Windows.Controls.ContextMenu context = new System.Windows.Controls.ContextMenu();
+            System.Windows.Controls.MenuItem exportItem = new System.Windows.Controls.MenuItem() { Header = "Export" };
+            exportItem.Click += ExportResourceButtonClick;
+            context.Items.Add(exportItem);
+            resourcesView.ContextMenu = context;
+            resourcesView.ContextMenuOpening += resourcesViewContext;
         }
 
+        private void resourcesViewContext(object sender, ContextMenuEventArgs e)
+        {
+            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
+            System.Windows.Controls.ContextMenu rvcontext = resourcesView.ContextMenu;
+            if (rvcontext.Items.Count > 1)
+            {
+                while (rvcontext.Items.Count > 1)
+                {
+                    rvcontext.Items.RemoveAt(1);
+                }
+            }
+
+            if (resource.FileType == "Text" || resource.FileType == "Lyrics" || resource.FileType == "Image")
+            {
+                System.Windows.Controls.MenuItem viewItem = new System.Windows.Controls.MenuItem() { Header = "View" };
+                viewItem.Click += ViewResourceButtonClick;
+                rvcontext.Items.Add(viewItem);
+
+                if (resource.FileType == "Lyrics")
+                {
+                    System.Windows.Controls.MenuItem toLRCItem = new System.Windows.Controls.MenuItem() { Header = "Convert to Extended LRC" };
+                    toLRCItem.Click += ExportToLrcButtonClick;
+                    rvcontext.Items.Add(toLRCItem);
+                    System.Windows.Controls.MenuItem toELYRItem = new System.Windows.Controls.MenuItem() { Header = "Convert to ELYR" };
+                    toELYRItem.Click += ExportToElyrButtonClick;
+                    rvcontext.Items.Add(toELYRItem);
+                }
+            }                        
+        }
+        
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
         {
             if (OpenFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -359,8 +354,7 @@ namespace KFN_Viewer
 
         public void ExportToLrcButtonClick(object sender, RoutedEventArgs e)
         {
-            System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
-            KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
+            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
             byte[] data = GetDataFromResource(resource);
 
@@ -377,8 +371,7 @@ namespace KFN_Viewer
 
         public void ExportToElyrButtonClick(object sender, RoutedEventArgs e)
         {
-            System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
-            KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
+            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
             byte[] data = GetDataFromResource(resource);
 
@@ -538,8 +531,7 @@ namespace KFN_Viewer
 
         public void ViewResourceButtonClick(object sender, RoutedEventArgs e)
         {
-            System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
-            KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
+            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
             if (resource.FileType == "Text" || resource.FileType == "Lyrics")
             {
@@ -581,8 +573,7 @@ namespace KFN_Viewer
 
         private void ExportResourceButtonClick(object sender, RoutedEventArgs e)
         {
-            System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
-            KFN.ResorceFile resource = b.CommandParameter as KFN.ResorceFile;
+            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
             FolderBrowserDialog.SelectedPath = new FileInfo(KFNFile).DirectoryName;
             if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
