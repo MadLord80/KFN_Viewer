@@ -9,6 +9,7 @@ using System.IO;
 using System.Security.Cryptography;
 using Mozilla.NUniversalCharDet;
 using System.Text.RegularExpressions;
+using System.IO.Compression;
 
 namespace KFN_Viewer
 {
@@ -112,7 +113,73 @@ namespace KFN_Viewer
                     toELYRItem.Click += ExportToElyrButtonClick;
                     rvcontext.Items.Add(toELYRItem);
                 }
-            }                        
+            }
+
+            string sourceName = GetAudioSource();
+            if ((resource.FileType == "Audio" && sourceName != null && resource.FileName == sourceName) || resource.FileType == "Lyrics")
+            {
+                System.Windows.Controls.MenuItem toEMZItem = new System.Windows.Controls.MenuItem() { Header = "Create EMZ" };
+                toEMZItem.Click += CreateEMZButtonClick;
+                rvcontext.Items.Add(toEMZItem);
+            }
+        }
+
+        private void CreateEMZButtonClick(object sender, RoutedEventArgs e)
+        {
+            string audioFile = GetAudioSource();
+            if (audioFile == null) { return; }
+            KFN.ResorceFile audioResource = resources.Where(r => r.FileName == audioFile).FirstOrDefault();
+            if (audioResource == null) { return; }
+
+            KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
+            if (lyricResource == null) { return; }
+
+            FileInfo sourceFile = new FileInfo(audioFile);
+            string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
+
+            string elyrText = INIToELYR(new string(Encoding.UTF8.GetChars(GetDataFromResource(lyricResource))));
+
+            //byte[] bom = new byte[] { 0xFF, 0xFE };
+            byte[] bom = new byte[0];
+            //string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
+            //byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.BigEndianUnicode, Encoding.UTF8.GetBytes(elyrHeader + elyrText));
+            byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.BigEndianUnicode, Encoding.UTF8.GetBytes(elyrText));
+            Array.Resize(ref bom, bom.Length + elyr.Length - 1);
+            Array.Copy(elyr, 1, bom, 2, elyr.Length - 1);
+            using (MemoryStream memStream = new MemoryStream())
+            {
+                using (ZipArchive archive = new ZipArchive(memStream, ZipArchiveMode.Create, true))
+                {
+                    ZipArchiveEntry lyricEntry = archive.CreateEntry(elyrFileName);
+                    using (MemoryStream lyricBody = new MemoryStream(bom))
+                    using (Stream ls = lyricEntry.Open())
+                    {
+                        lyricBody.CopyTo(ls);
+                    }
+
+                    ZipArchiveEntry audioEntry = archive.CreateEntry(audioResource.FileName);
+                    using (MemoryStream audioBody = new MemoryStream(GetDataFromResource(audioResource)))
+                    using (Stream aus = audioEntry.Open())
+                    {
+                        audioBody.CopyTo(aus);
+                    }
+                }
+
+                using (FileStream fs = new FileStream(@"d:\test22.zip", FileMode.Create))
+                {
+                    memStream.Seek(0, SeekOrigin.Begin);
+                    memStream.CopyTo(fs);
+                }
+            }
+            System.Windows.MessageBox.Show("OK");
+        }
+
+        private string GetAudioSource()
+        {
+            if (properties.Count == 0) { return null; }
+            //1,I,ddt_-_chto_takoe_osen'.mp3
+            KeyValuePair<string, string> sourceProp = properties.Where(kv => kv.Key == "Source").FirstOrDefault();
+            return sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last();
         }
         
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
@@ -320,11 +387,8 @@ namespace KFN_Viewer
                         string elyrText = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
                         if (lrcText != null)
                         {
-                            //1,I,ddt_-_chto_takoe_osen'.mp3
-                            KeyValuePair<string, string> sourceProp = properties.Where(kv => kv.Key == "Source").FirstOrDefault();
-                            string sourceName = (sourceProp.Value != null) 
-                                ? sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last()
-                                : resource.FileName;
+                            string audioSource = GetAudioSource();
+                            string sourceName = (audioSource != null) ? audioSource : resource.FileName;
                             FileInfo sourceFile = new FileInfo(sourceName);
                             string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
                             string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
