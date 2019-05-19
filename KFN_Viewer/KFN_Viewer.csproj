@@ -63,6 +63,21 @@
     <Compile Include="ImageWindow.xaml.cs">
       <DependentUpon>ImageWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ParseINI\Exceptions\ParsingException.cs" />
+    <Compile Include="ParseINI\FileIniParser.cs" />
+    <Compile Include="ParseINI\Model\Configuration\ConcatenateDuplicatedKeysIniParserConfiguration.cs" />
+    <Compile Include="ParseINI\Model\Configuration\IniParserConfiguration.cs" />
+    <Compile Include="ParseINI\Model\Formatting\DefaultIniDataFormatter.cs" />
+    <Compile Include="ParseINI\Model\Formatting\IIniDataFormatter.cs" />
+    <Compile Include="ParseINI\Model\IniData.cs" />
+    <Compile Include="ParseINI\Model\IniDataCaseInsensitive.cs" />
+    <Compile Include="ParseINI\Model\KeyData.cs" />
+    <Compile Include="ParseINI\Model\KeyDataCollection.cs" />
+    <Compile Include="ParseINI\Model\SectionData.cs" />
+    <Compile Include="ParseINI\Model\SectionDataCollection.cs" />
+    <Compile Include="ParseINI\Parser\ConcatenateDuplicatedKeysIniDataParser.cs" />
+    <Compile Include="ParseINI\Parser\IniDataParser.cs" />
+    <Compile Include="ParseINI\StreamIniDataParser.cs" />
     <Compile Include="Themes\LeftMarginMultiplierConverter.cs" />
     <Compile Include="Themes\TreeViewItemExtensions.cs" />
     <Compile Include="uchardet\ByteBuffer.cs" />

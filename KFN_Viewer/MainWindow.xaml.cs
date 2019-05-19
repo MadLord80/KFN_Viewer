@@ -7,9 +7,12 @@ using System.Windows.Forms;
 using System.Windows.Controls;
 using System.IO;
 using System.Security.Cryptography;
-using Mozilla.NUniversalCharDet;
 using System.Text.RegularExpressions;
 using System.IO.Compression;
+
+using Mozilla.NUniversalCharDet;
+using IniParser;
+using IniParser.Model;
 
 namespace KFN_Viewer
 {
@@ -563,6 +566,11 @@ namespace KFN_Viewer
 
         private string INIToExtLRC(string iniText)
         {
+            //FileIniDataParser parser = new FileIniDataParser();
+            var parser = new IniParser.Parser.IniDataParser();
+            IniData iniData = parser.Parse(iniText);
+            //using (StreamReader ini = new StreamReader())
+
             Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
             Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
             string[] words = { };
