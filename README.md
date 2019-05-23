@@ -9,3 +9,4 @@ TODO:
 - [ ] export to decrypted KFN with resources by choice
 - [ ] delete ID3 lyric (USLT and SYLT)
 - [ ] lyric with '-' and some symbols without time markers (Maksyuha)
+- [ ] break words into syllables
