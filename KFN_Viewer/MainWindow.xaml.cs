@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using System.IO.Compression;
 
 using Mozilla.NUniversalCharDet;
-using IniParser;
 using IniParser.Model;
 
 namespace KFN_Viewer
