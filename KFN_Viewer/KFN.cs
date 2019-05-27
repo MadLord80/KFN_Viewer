@@ -3,11 +3,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Security.Cryptography;
+
+using Mozilla.NUniversalCharDet;
 
 public class KFN
 {
+    private string fileName;
     private string error;
     private Dictionary<string, string> properties = new Dictionary<string, string>();
+    private List<string> unknownProperties = new List<string>();
+    private List<ResorceFile> resources = new List<ResorceFile>();
+    private long endOfHeaderOffset;
+    // US-ASCII
+    private int resourceNamesEncodingAuto = 20127;
+    private string autoDetectEncoding;
 
     private Dictionary<string, string> propsDesc = new Dictionary<string, string>{
         {"DIFM", "Man difficult"},
@@ -54,13 +64,39 @@ public class KFN
     };
 
     public KFN(string fileName)
-    {       
-        this.ReadFile(fileName);
+    {
+        this.fileName = fileName;
+        this.ReadFile();
     }
 
-    public string isError()
+    public string isError
     {
-        return this.error;
+        get { return this.error; }
+    }
+
+    public string FileName
+    {
+        get { return this.fileName; }
+    }
+
+    public Dictionary<string, string> Properties
+    {
+        get { return this.properties; }
+    }
+
+    public List<string> UnknownProperties
+    {
+        get { return this.unknownProperties; }
+    }
+
+    public List<ResorceFile> Resorces
+    {
+        get { return this.resources; }
+    }
+
+    public string AutoDetectEncoding
+    {
+        get { return this.autoDetectEncoding; }
     }
 
     public string GetPropDesc(string PropName)
@@ -123,18 +159,19 @@ public class KFN
     }
 
     //private void ReadFile(int filesEncoding = 0)
-    private void ReadFile(string fileName)
+    public void ReadFile(int filesEncoding = 0)
     {
         this.error = null;
         //propertiesView.ItemsSource = null;
-        //properties.Clear();
+        this.properties.Clear();
+        this.unknownProperties.Clear();
         //resourcesView.ItemsSource = null;
-        //resources.Clear();
+        this.resources.Clear();
         //ToEMZButton.IsEnabled = false;
 
         //fileNameLabel.Content = "KFN file: " + KFNFile;
 
-        using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
+        using (FileStream fs = new FileStream(this.fileName, FileMode.Open, FileAccess.Read))
         {
             byte[] signature = new byte[4];
             fs.Read(signature, 0, signature.Length);
@@ -170,6 +207,7 @@ public class KFN
                         if (SpropName.Contains("unknown"))
                         {
                             //PropertyWindow.Text += SpropName + ": " + BitConverter.ToUInt32(propValue, 0) + "\n";
+                            this.unknownProperties.Add(SpropName + ": " + BitConverter.ToUInt32(propValue, 0));
                         }
                         if (propName != SpropName)
                         {
@@ -194,6 +232,7 @@ public class KFN
                         if (SpropName.Contains("unknown"))
                         {
                             //PropertyWindow.Text += SpropName + ": " + new string(Encoding.UTF8.GetChars(value)) + "\n";
+                            this.unknownProperties.Add(SpropName + ": " + new string(Encoding.UTF8.GetChars(value)));
                         }
                         if (propName != SpropName)
                         {
@@ -204,7 +243,8 @@ public class KFN
                 else
                 {
                     //PropertyWindow.Text += SpropName + ": unknown block type - " + prop[4] + "!\n";
-                    this.properties.Add(SpropName, "unknown block type - " + prop[4]);
+                    //this.properties.Add(SpropName, "unknown block type - " + prop[4]);
+                    this.error = "unknown property block type - " + prop[4];
                     return;
                 }
                 maxProps--;
@@ -233,7 +273,7 @@ public class KFN
                 fs.Read(resourceEncrypted, 0, resourceEncrypted.Length);
                 int encrypted = BitConverter.ToInt32(resourceEncrypted, 0);
 
-                if (filesEncoding == 0 && filesEncodingAuto == 20127)
+                if (filesEncoding == 0 && resourceNamesEncodingAuto == 20127)
                 {
                     UniversalDetector Det = new UniversalDetector(null);
                     Det.HandleData(resourceName, 0, resourceName.Length);
@@ -244,25 +284,28 @@ public class KFN
                         // fix encoding for 1251 upper case and MAC
                         if (enc == "KOI8-R" || enc == "X-MAC-CYRILLIC") { enc = "WINDOWS-1251"; }
                         Encoding denc = Encoding.GetEncoding(enc);
-                        filesEncodingAuto = denc.CodePage;
-                        AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
+                        resourceNamesEncodingAuto = denc.CodePage;
+                        //AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
+                        this.autoDetectEncoding = denc.CodePage + ": " + denc.EncodingName;
                     }
                     else if (enc == null)
                     {
-                        Encoding denc = Encoding.GetEncoding(filesEncodingAuto);
-                        AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
+                        Encoding denc = Encoding.GetEncoding(resourceNamesEncodingAuto);
+                        //AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
+                        this.autoDetectEncoding = denc.CodePage + ": " + denc.EncodingName;
                     }
                     else
                     {
-                        AutoDetectedEncLabel.Content = "No supported: use " + Encoding.GetEncoding(filesEncodingAuto).EncodingName;
+                        //AutoDetectedEncLabel.Content = "No supported: use " + Encoding.GetEncoding(filesEncodingAuto).EncodingName;
+                        this.autoDetectEncoding = "No supported: use " + Encoding.GetEncoding(resourceNamesEncodingAuto).EncodingName;
                     }
                 }
 
-                int useEncoding = (filesEncoding != 0) ? filesEncoding : filesEncodingAuto;
+                int useEncoding = (filesEncoding != 0) ? filesEncoding : resourceNamesEncodingAuto;
                 string fName = new string(Encoding.GetEncoding(useEncoding).GetChars(resourceName));
 
-                resources.Add(new KFN.ResorceFile(
-                    KFN.GetFileType(resourceType),
+                this.resources.Add(new KFN.ResorceFile(
+                    this.GetFileType(resourceType),
                     fName,
                     BitConverter.ToInt32(resourceEncryptedLenght, 0),
                     BitConverter.ToInt32(resourceOffset, 0),
@@ -271,19 +314,55 @@ public class KFN
 
                 resourcesCount--;
             }
-            endOfHeaderOffset = fs.Position;
-            resourcesView.ItemsSource = resources;
-            AutoSizeColumns(resourcesView.View as GridView);
+            this.endOfHeaderOffset = fs.Position;
+            //resourcesView.ItemsSource = resources;
+            //AutoSizeColumns(resourcesView.View as GridView);
         }
-        FilesEncodingElement.IsEnabled = true;
-        if (resources.Count > 1) { ExportAllButton.IsEnabled = true; }
+        //FilesEncodingElement.IsEnabled = true;
+        //if (resources.Count > 1) { ExportAllButton.IsEnabled = true; }
 
-        string sourceName = GetAudioSource();
-        if (sourceName != null)
+        //string sourceName = GetAudioSource();
+        //if (sourceName != null)
+        //{
+        //    KFN.ResorceFile audioResource = resources.Where(r => r.FileName == sourceName).FirstOrDefault();
+        //    KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
+        //    if (audioResource != null && lyricResource != null) { ToEMZButton.IsEnabled = true; }
+        //}
+    }
+
+    public byte[] GetDataFromResource(ResorceFile resource)
+    {
+        byte[] data = new byte[resource.FileLength];
+        using (FileStream fs = new FileStream(this.fileName, FileMode.Open, FileAccess.Read))
         {
-            KFN.ResorceFile audioResource = resources.Where(r => r.FileName == sourceName).FirstOrDefault();
-            KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-            if (audioResource != null && lyricResource != null) { ToEMZButton.IsEnabled = true; }
+            fs.Position = this.endOfHeaderOffset + resource.FileOffset;
+            fs.Read(data, 0, data.Length);
+        }
+
+        if (resource.IsEncrypted)
+        {
+            byte[] Key = Enumerable.Range(0, this.properties["AES-ECB-128 Key"].Length)
+                .Where(x => x % 2 == 0)
+                .Select(x => Convert.ToByte(this.properties["AES-ECB-128 Key"].Substring(x, 2), 16))
+                .ToArray();
+            data = DecryptData(data, Key);
+        }
+        return data;
+    }
+
+    private byte[] DecryptData(byte[] data, byte[] Key)
+    {
+        RijndaelManaged aes = new RijndaelManaged
+        {
+            KeySize = 128,
+            Padding = PaddingMode.None,
+            Mode = CipherMode.ECB
+        };
+        using (ICryptoTransform decrypt = aes.CreateDecryptor(Key, null))
+        {
+            byte[] dest = decrypt.TransformFinalBlock(data, 0, data.Length);
+            decrypt.Dispose();
+            return dest;
         }
     }
 }

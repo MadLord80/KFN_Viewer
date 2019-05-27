@@ -6,11 +6,11 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Controls;
 using System.IO;
-using System.Security.Cryptography;
+//using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.IO.Compression;
 
-using Mozilla.NUniversalCharDet;
+//using Mozilla.NUniversalCharDet;
 using IniParser.Model;
 
 namespace KFN_Viewer
@@ -19,13 +19,13 @@ namespace KFN_Viewer
     {
         private readonly OpenFileDialog OpenFileDialog = new OpenFileDialog();
         private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
-        private string KFNFile;
-        private KFN KFN = new KFN();
-        private List<KFN.ResorceFile> resources = new List<KFN.ResorceFile>();
-        private Dictionary<string, string> properties = new Dictionary<string, string>();
-        private long endOfHeaderOffset;
+        //private string KFNFile;
+        private KFN KFN;
+        //private List<KFN.ResorceFile> resources = new List<KFN.ResorceFile>();
+        //private Dictionary<string, string> properties = new Dictionary<string, string>();
+        //private long endOfHeaderOffset;
 
-        private int filesEncodingAuto = 20127;
+        //private int filesEncodingAuto = 20127;
         private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
         { { 0, "Use auto detect" } };
 
@@ -120,10 +120,10 @@ namespace KFN_Viewer
 
         private void CreateEMZButtonClick(object sender, RoutedEventArgs e)
         {
-            FileInfo kfnFile = new FileInfo(KFNFile);
+            FileInfo kfnFile = new FileInfo(KFN.FileName);
             string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
 
-            FolderBrowserDialog.SelectedPath = new FileInfo(KFNFile).DirectoryName;
+            FolderBrowserDialog.SelectedPath = kfnFile.DirectoryName;
             if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 string exportFolder = FolderBrowserDialog.SelectedPath;
@@ -154,16 +154,16 @@ namespace KFN_Viewer
         {
             string audioFile = GetAudioSource();
             if (audioFile == null) { return null; }
-            KFN.ResorceFile audioResource = resources.Where(r => r.FileName == audioFile).FirstOrDefault();
+            KFN.ResorceFile audioResource = KFN.Resorces.Where(r => r.FileName == audioFile).FirstOrDefault();
             if (audioResource == null) { return null; }
 
-            KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
+            KFN.ResorceFile lyricResource = KFN.Resorces.Where(r => r.FileName == "Song.ini").FirstOrDefault();
             if (lyricResource == null) { return null; }
 
             FileInfo sourceFile = new FileInfo(audioFile);
             string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
 
-            string elyrText = INIToELYR(new string(Encoding.UTF8.GetChars(GetDataFromResource(lyricResource))));
+            string elyrText = INIToELYR(new string(Encoding.UTF8.GetChars(KFN.GetDataFromResource(lyricResource))));
 
             byte[] bom = Encoding.Unicode.GetPreamble();
             string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
@@ -185,7 +185,7 @@ namespace KFN_Viewer
                     }
 
                     ZipArchiveEntry audioEntry = archive.CreateEntry(audioResource.FileName);
-                    using (MemoryStream audioBody = new MemoryStream(GetDataFromResource(audioResource)))
+                    using (MemoryStream audioBody = new MemoryStream(KFN.GetDataFromResource(audioResource)))
                     using (Stream aus = audioEntry.Open())
                     {
                         audioBody.CopyTo(aus);
@@ -198,9 +198,9 @@ namespace KFN_Viewer
 
         private string GetAudioSource()
         {
-            if (properties.Count == 0) { return null; }
+            if (KFN.Properties.Count == 0) { return null; }
             //1,I,ddt_-_chto_takoe_osen'.mp3
-            KeyValuePair<string, string> sourceProp = properties.Where(kv => kv.Key == "Source").FirstOrDefault();
+            KeyValuePair<string, string> sourceProp = KFN.Properties.Where(kv => kv.Key == "Source").FirstOrDefault();
             return sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last();
         }
         
@@ -208,264 +208,140 @@ namespace KFN_Viewer
         {
             if (OpenFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                KFNFile = OpenFileDialog.FileName;
-                filesEncodingAuto = 20127;
-                ReadFile();
+                //KFNFile = OpenFileDialog.FileName;
+                //filesEncodingAuto = 20127;
+                //ReadFile();
+                KFN = new KFN(OpenFileDialog.FileName);
+                if (KFN.isError != null)
+                {
+                    System.Windows.MessageBox.Show(KFN.isError);
+                    return;
+                }
+                this.UpdateKFN();
             }
         }
 
-        private void ReadFile(int filesEncoding = 0)
+        private void UpdateKFN()
         {
             propertiesView.ItemsSource = null;
-            properties.Clear();
+            //properties.Clear();
             resourcesView.ItemsSource = null;
-            resources.Clear();
+            //resources.Clear();
             ToEMZButton.IsEnabled = false;
+            fileNameLabel.Content = "KFN file: " + KFN.FileName;
+            propertiesView.ItemsSource = KFN.Properties;
+            PropertyWindow.Text = string.Join("\n", KFN.UnknownProperties);
+            AutoDetectedEncLabel.Content = KFN.AutoDetectEncoding;
 
-            fileNameLabel.Content = "KFN file: " + KFNFile;
+            //endOfHeaderOffset = fs.Position;
+            resourcesView.ItemsSource = KFN.Resorces;
+            AutoSizeColumns(resourcesView.View as GridView);
 
-            using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
-            {
-                byte[] signature = new byte[4];
-                fs.Read(signature, 0, signature.Length);
-                string sign = new string(Encoding.UTF8.GetChars(signature));
-                if (sign != "KFNB")
-                {
-                    System.Windows.MessageBox.Show("Invalid KFN signature!");
-                    return;
-                }
-
-                byte[] prop = new byte[5];
-                byte[] propValue = new byte[4];
-                int maxProps = 40;
-                while (maxProps > 0)
-                {
-                    fs.Read(prop, 0, prop.Length);
-                    string propName = new string(Encoding.UTF8.GetChars(new ArraySegment<byte>(prop, 0, 4).ToArray()));
-                    if (propName == "ENDH")
-                    {
-                        fs.Position += 4;
-                        break;
-                    }
-                    string SpropName = KFN.GetPropDesc(propName);
-                    if (prop[4] == 1)
-                    {
-                        fs.Read(propValue, 0, propValue.Length);
-                        if (SpropName == "Genre" && BitConverter.ToUInt32(propValue, 0) == 0xffffffff)
-                        {
-                            properties.Add(SpropName, "Not set");
-                        }
-                        else
-                        {
-                            if (SpropName.Contains("unknown"))
-                            {
-                                PropertyWindow.Text += SpropName + ": " + BitConverter.ToUInt32(propValue, 0) + "\n";
-                            }                            
-                            if (propName != SpropName)
-                            {
-                                properties.Add(SpropName, BitConverter.ToUInt32(propValue, 0).ToString());
-                            }
-                        }                        
-                    }
-                    else if (prop[4] == 2)
-                    {
-                        fs.Read(propValue, 0, propValue.Length);
-                        byte[] value = new byte[BitConverter.ToUInt32(propValue, 0)];
-                        fs.Read(value, 0, value.Length);
-                        if (SpropName == "AES-ECB-128 Key")
-                        {
-                            string val = (value.Select(b => (int)b).Sum() == 0) 
-                                ? "Not present" 
-                                : value.Select(b => b.ToString("X2")).Aggregate((s1, s2) => s1 + s2);
-                            properties.Add(SpropName, val);
-                        }
-                        else
-                        {
-                            if (SpropName.Contains("unknown"))
-                            {
-                                PropertyWindow.Text += SpropName + ": " + new string(Encoding.UTF8.GetChars(value)) + "\n";
-                            }                            
-                            if (propName != SpropName)
-                            {
-                                properties.Add(SpropName, new string(Encoding.UTF8.GetChars(value)));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        PropertyWindow.Text += SpropName + ": unknown block type - " + prop[4] + "!\n";
-                        properties.Add(SpropName, "unknown block type - " + prop[4]);
-                        return;
-                    }
-                    maxProps--;
-                }
-                propertiesView.ItemsSource = properties;
-
-                byte[] numOfFiles = new byte[4];
-                fs.Read(numOfFiles, 0, numOfFiles.Length);
-                int filesCount = BitConverter.ToInt32(numOfFiles, 0);
-                while (filesCount > 0)
-                {
-                    byte[] fileNameLenght = new byte[4];
-                    byte[] fileType = new byte[4];
-                    byte[] fileLenght = new byte[4];
-                    byte[] fileEncryptedLenght = new byte[4];
-                    byte[] fileOffset = new byte[4];
-                    byte[] fileEncrypted = new byte[4];
-
-                    fs.Read(fileNameLenght, 0, fileNameLenght.Length);
-                    byte[] fileName = new byte[BitConverter.ToUInt32(fileNameLenght, 0)];
-                    fs.Read(fileName, 0, fileName.Length);
-                    fs.Read(fileType, 0, fileType.Length);
-                    fs.Read(fileLenght, 0, fileLenght.Length);
-                    fs.Read(fileOffset, 0, fileOffset.Length);
-                    fs.Read(fileEncryptedLenght, 0, fileEncryptedLenght.Length);
-                    fs.Read(fileEncrypted, 0, fileEncrypted.Length);
-                    int encrypted = BitConverter.ToInt32(fileEncrypted, 0);
-
-                    if (filesEncoding == 0 && filesEncodingAuto == 20127)
-                    {
-                        UniversalDetector Det = new UniversalDetector(null);
-                        Det.HandleData(fileName, 0, fileName.Length);
-                        Det.DataEnd();
-                        string enc = Det.GetDetectedCharset();
-                        if (enc != null && enc != "Not supported")
-                        {
-                            // fix encoding for 1251 upper case and MAC
-                            if (enc == "KOI8-R" || enc == "X-MAC-CYRILLIC") { enc = "WINDOWS-1251"; }
-                            Encoding denc = Encoding.GetEncoding(enc);
-                            filesEncodingAuto = denc.CodePage;
-                            AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
-                        }
-                        else if (enc == null)
-                        {
-                            Encoding denc = Encoding.GetEncoding(filesEncodingAuto);
-                            AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
-                        }
-                        else
-                        {
-                            AutoDetectedEncLabel.Content = "No supported: use " + Encoding.GetEncoding(filesEncodingAuto).EncodingName;
-                        }
-                    }
-
-                    int useEncoding = (filesEncoding != 0) ? filesEncoding : filesEncodingAuto;
-                    string fName = new string(Encoding.GetEncoding(useEncoding).GetChars(fileName));
-
-                    resources.Add(new KFN.ResorceFile(
-                        KFN.GetFileType(fileType),
-                        fName,
-                        BitConverter.ToInt32(fileEncryptedLenght, 0),
-                        BitConverter.ToInt32(fileOffset, 0),
-                        (encrypted == 0) ? false : true
-                    ));
-
-                    filesCount--;
-                }
-                endOfHeaderOffset = fs.Position;
-                resourcesView.ItemsSource = resources;
-                AutoSizeColumns(resourcesView.View as GridView);
-            }
             FilesEncodingElement.IsEnabled = true;
-            if (resources.Count > 1) { ExportAllButton.IsEnabled = true; }
-                       
-            string sourceName = GetAudioSource();
-            if (sourceName != null)
-            {
-                KFN.ResorceFile audioResource = resources.Where(r => r.FileName == sourceName).FirstOrDefault();
-                KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-                if (audioResource != null && lyricResource != null) { ToEMZButton.IsEnabled = true; }
-            }
+            if (KFN.Resorces.Count > 1) { ExportAllButton.IsEnabled = true; }
+
+            //string sourceName = GetAudioSource();
+            //if (sourceName != null)
+            //{
+            //    KFN.ResorceFile audioResource = resources.Where(r => r.FileName == sourceName).FirstOrDefault();
+            //    KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
+            //    if (audioResource != null && lyricResource != null) { ToEMZButton.IsEnabled = true; }
+            //}
         }
 
         private void FilesEncodingElement_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             KeyValuePair<int, string> selectedEncoding = (KeyValuePair<int, string>)FilesEncodingElement.SelectedItem;
-            if (KFNFile != null) { ReadFile(selectedEncoding.Key); }
+            if (KFN != null)
+            {
+                KFN.ReadFile(selectedEncoding.Key);
+                this.UpdateKFN();
+            }
         }
 
         private void ExportAllButton_Click(object sender, RoutedEventArgs e)
         {
-            FileInfo kfnfile = new FileInfo(KFNFile);
-            string KFNFileDir = kfnfile.DirectoryName;
-            string KFNNameDir = kfnfile.Name.Substring(0, kfnfile.Name.Length - kfnfile.Extension.Length);
+            //FileInfo kfnfile = new FileInfo(KFN.FileName);
+            //string KFNFileDir = kfnfile.DirectoryName;
+            //string KFNNameDir = kfnfile.Name.Substring(0, kfnfile.Name.Length - kfnfile.Extension.Length);
             
-            FolderBrowserDialog.SelectedPath = KFNFileDir;
-            if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                string exportFolder = FolderBrowserDialog.SelectedPath;
-                try
-                {
-                    System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
-                }
-                catch (UnauthorizedAccessException error)
-                {
-                    System.Windows.MessageBox.Show(error.Message);
-                    return;
-                }
+            //FolderBrowserDialog.SelectedPath = KFNFileDir;
+            //if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            //{
+            //    string exportFolder = FolderBrowserDialog.SelectedPath;
+            //    try
+            //    {
+            //        System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
+            //    }
+            //    catch (UnauthorizedAccessException error)
+            //    {
+            //        System.Windows.MessageBox.Show(error.Message);
+            //        return;
+            //    }
 
-                exportFolder += "\\" + KFNNameDir;
-                if (Directory.Exists(exportFolder)) { Directory.Delete(exportFolder, true); }
-                Directory.CreateDirectory(exportFolder);
+            //    exportFolder += "\\" + KFNNameDir;
+            //    if (Directory.Exists(exportFolder)) { Directory.Delete(exportFolder, true); }
+            //    Directory.CreateDirectory(exportFolder);
 
-                string audioSource = GetAudioSource();
-                foreach (KFN.ResorceFile resource in resources)
-                {
-                    ExportResourceToFile(resource, exportFolder);
-                    if (resource.FileType == "Lyrics")
-                    {
-                        byte[] data = GetDataFromResource(resource);
-                        // try to convert to Extended LRC and Elyr
-                        string lrcText = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
-                        string elyrText = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
-                        if (lrcText != null)
-                        {
-                            string sourceName = (audioSource != null) ? audioSource : resource.FileName;
-                            FileInfo sourceFile = new FileInfo(sourceName);
-                            string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
-                            string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
+            //    string audioSource = GetAudioSource();
+            //    foreach (KFN.ResorceFile resource in KFN.Resorces)
+            //    {
+            //        ExportResourceToFile(resource, exportFolder);
+            //        if (resource.FileType == "Lyrics")
+            //        {
+            //            byte[] data = GetDataFromResource(resource);
+            //            // try to convert to Extended LRC and Elyr
+            //            string lrcText = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
+            //            string elyrText = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
+            //            if (lrcText != null)
+            //            {
+            //                string sourceName = (audioSource != null) ? audioSource : resource.FileName;
+            //                FileInfo sourceFile = new FileInfo(sourceName);
+            //                string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
+            //                string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
 
-                            ExportTextToFile(
-                                lrcFileName, 
-                                Encoding.Convert(Encoding.UTF8, Encoding.GetEncoding(1251), Encoding.UTF8.GetBytes(lrcText)),
-                                exportFolder
-                            );
+            //                ExportTextToFile(
+            //                    lrcFileName, 
+            //                    Encoding.Convert(Encoding.UTF8, Encoding.GetEncoding(1251), Encoding.UTF8.GetBytes(lrcText)),
+            //                    exportFolder
+            //                );
 
-                            byte[] bom = Encoding.Unicode.GetPreamble();
-                            string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
-                            byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.Unicode, Encoding.UTF8.GetBytes(elyrHeader + elyrText));
-                            Array.Resize(ref bom, bom.Length + elyr.Length);
-                            Array.Copy(elyr, 0, bom, 2, elyr.Length);
-                            ExportTextToFile(elyrFileName, bom, exportFolder);
-                        }
-                    }
-                }
+            //                byte[] bom = Encoding.Unicode.GetPreamble();
+            //                string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
+            //                byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.Unicode, Encoding.UTF8.GetBytes(elyrHeader + elyrText));
+            //                Array.Resize(ref bom, bom.Length + elyr.Length);
+            //                Array.Copy(elyr, 0, bom, 2, elyr.Length);
+            //                ExportTextToFile(elyrFileName, bom, exportFolder);
+            //            }
+            //        }
+            //    }
 
-                // create EMZ
-                if (audioSource != null)
-                {
-                    KFN.ResorceFile audioResource = resources.Where(r => r.FileName == audioSource).FirstOrDefault();
-                    KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-                    if (audioResource != null && lyricResource != null)
-                    {
-                        byte[] emz = CreateEMZ();
-                        if (emz != null)
-                        {
-                            FileInfo kfnFile = new FileInfo(KFNFile);
-                            string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
-                            ExportTextToFile(emzFileName, emz, exportFolder);
-                        }
-                    }
-                }
+            //    // create EMZ
+            //    if (audioSource != null)
+            //    {
+            //        KFN.ResorceFile audioResource = KFN.Resorces.Where(r => r.FileName == audioSource).FirstOrDefault();
+            //        KFN.ResorceFile lyricResource = KFN.Resorces.Where(r => r.FileName == "Song.ini").FirstOrDefault();
+            //        if (audioResource != null && lyricResource != null)
+            //        {
+            //            byte[] emz = CreateEMZ();
+            //            if (emz != null)
+            //            {
+            //                FileInfo kfnFile = new FileInfo(KFN.FileName);
+            //                string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
+            //                ExportTextToFile(emzFileName, emz, exportFolder);
+            //            }
+            //        }
+            //    }
 
-                System.Windows.MessageBox.Show("Export OK: " + exportFolder);
-            }
+            //    System.Windows.MessageBox.Show("Export OK: " + exportFolder);
+            //}
         }
 
         public void ExportToLrcButtonClick(object sender, RoutedEventArgs e)
         {
             KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
-            byte[] data = GetDataFromResource(resource);
+            byte[] data = KFN.GetDataFromResource(resource);
 
             string textStrings = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
             if (textStrings == null) { return; }
@@ -482,7 +358,7 @@ namespace KFN_Viewer
         {
             KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
-            byte[] data = GetDataFromResource(resource);
+            byte[] data = KFN.GetDataFromResource(resource);
 
             string textStrings = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
             if (textStrings == null) { return; }
@@ -639,8 +515,8 @@ namespace KFN_Viewer
                     newLine = true;
                 }                
             }
-            KeyValuePair<string, string> artistProp = properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
-            KeyValuePair<string, string> titleProp = properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+            KeyValuePair<string, string> artistProp = KFN.Properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+            KeyValuePair<string, string> titleProp = KFN.Properties.Where(kv => kv.Key == "Title").FirstOrDefault();
             if (titleProp.Value != null) { lrcText = "[ti:" + titleProp.Value + "]\n" + lrcText; }
             if (artistProp.Value != null) { lrcText = "[ar:" + artistProp.Value + "]\n" + lrcText; }
 
@@ -653,36 +529,36 @@ namespace KFN_Viewer
 
             if (resource.FileType == "Text" || resource.FileType == "Lyrics")
             {
-                byte[] data = GetDataFromResource(resource);
+                //byte[] data = GetDataFromResource(resource);
 
-                //UTF-8
-                int detEncoding = 65001;
-                if (resource.FileType == "Text")
-                {
-                    UniversalDetector Det = new UniversalDetector(null);
-                    Det.HandleData(data, 0, data.Length);
-                    Det.DataEnd();
-                    string enc = Det.GetDetectedCharset();
-                    if (enc != null && enc != "Not supported")
-                    {
-                        // fix encoding for 1251 upper case and MAC
-                        //if (enc == "KOI8-R" || enc == "X-MAC-CYRILLIC") { enc = "WINDOWS-1251"; }
-                        Encoding denc = Encoding.GetEncoding(enc);
-                        detEncoding = denc.CodePage;
-                    }
-                }
+                ////UTF-8
+                //int detEncoding = 65001;
+                //if (resource.FileType == "Text")
+                //{
+                //    UniversalDetector Det = new UniversalDetector(null);
+                //    Det.HandleData(data, 0, data.Length);
+                //    Det.DataEnd();
+                //    string enc = Det.GetDetectedCharset();
+                //    if (enc != null && enc != "Not supported")
+                //    {
+                //        // fix encoding for 1251 upper case and MAC
+                //        //if (enc == "KOI8-R" || enc == "X-MAC-CYRILLIC") { enc = "WINDOWS-1251"; }
+                //        Encoding denc = Encoding.GetEncoding(enc);
+                //        detEncoding = denc.CodePage;
+                //    }
+                //}
 
-                string text = new string(Encoding.GetEncoding(detEncoding).GetChars(data));
-                Window viewWindow = new ViewWindow(
-                    resource.FileName, 
-                    text, 
-                    Encoding.GetEncodings().Where(en => en.CodePage == detEncoding).First().DisplayName
-                );
-                viewWindow.Show();
+                //string text = new string(Encoding.GetEncoding(detEncoding).GetChars(data));
+                //Window viewWindow = new ViewWindow(
+                //    resource.FileName, 
+                //    text, 
+                //    Encoding.GetEncodings().Where(en => en.CodePage == detEncoding).First().DisplayName
+                //);
+                //viewWindow.Show();
             }
             else if (resource.FileType == "Image")
             {
-                byte[] data = GetDataFromResource(resource);
+                byte[] data = KFN.GetDataFromResource(resource);
 
                 Window viewWindow = new ImageWindow(resource.FileName, data);
                 viewWindow.Show();
@@ -693,7 +569,7 @@ namespace KFN_Viewer
         {
             KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
-            FolderBrowserDialog.SelectedPath = new FileInfo(KFNFile).DirectoryName;
+            FolderBrowserDialog.SelectedPath = new FileInfo(KFN.FileName).DirectoryName;
             if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 string exportFolder = FolderBrowserDialog.SelectedPath;
@@ -714,7 +590,7 @@ namespace KFN_Viewer
 
         private void ExportResourceToFile(KFN.ResorceFile resource, string folder)
         {
-            byte[] data = GetDataFromResource(resource);
+            byte[] data = KFN.GetDataFromResource(resource);
 
             using (FileStream fs = new FileStream(folder + "\\" + resource.FileName, FileMode.Create, FileAccess.Write))
             {
@@ -750,41 +626,41 @@ namespace KFN_Viewer
             }
         }
 
-        private byte[] GetDataFromResource(KFN.ResorceFile resource)
-        {
-            byte[] data = new byte[resource.FileLength];
-            using (FileStream fs = new FileStream(KFNFile, FileMode.Open, FileAccess.Read))
-            {
-                fs.Position = endOfHeaderOffset + resource.FileOffset;
-                fs.Read(data, 0, data.Length);
-            }
+        //private byte[] GetDataFromResource(KFN.ResorceFile resource)
+        //{
+        //    byte[] data = new byte[resource.FileLength];
+        //    using (FileStream fs = new FileStream(KFN.FileName, FileMode.Open, FileAccess.Read))
+        //    {
+        //        //fs.Position = endOfHeaderOffset + resource.FileOffset;
+        //        fs.Read(data, 0, data.Length);
+        //    }
 
-            if (resource.IsEncrypted)
-            {
-                byte[] Key = Enumerable.Range(0, properties["AES-ECB-128 Key"].Length)
-                    .Where(x => x % 2 == 0)
-                    .Select(x => Convert.ToByte(properties["AES-ECB-128 Key"].Substring(x, 2), 16))
-                    .ToArray();
-                data = DecryptData(data, Key);
-            }
-            return data;
-        }
+        //    if (resource.IsEncrypted)
+        //    {
+        //        byte[] Key = Enumerable.Range(0, KFN.Properties["AES-ECB-128 Key"].Length)
+        //            .Where(x => x % 2 == 0)
+        //            .Select(x => Convert.ToByte(KFN.Properties["AES-ECB-128 Key"].Substring(x, 2), 16))
+        //            .ToArray();
+        //        data = DecryptData(data, Key);
+        //    }
+        //    return data;
+        //}
 
-        private byte[] DecryptData(byte[] data, byte[] Key)
-        {
-            RijndaelManaged aes = new RijndaelManaged
-            {
-                KeySize = 128,
-                Padding = PaddingMode.None,
-                Mode = CipherMode.ECB
-            };
-            using (ICryptoTransform decrypt = aes.CreateDecryptor(Key, null))
-            {
-                byte[] dest = decrypt.TransformFinalBlock(data, 0, data.Length);
-                decrypt.Dispose();
-                return dest;
-            }
-        }
+        //private byte[] DecryptData(byte[] data, byte[] Key)
+        //{
+        //    RijndaelManaged aes = new RijndaelManaged
+        //    {
+        //        KeySize = 128,
+        //        Padding = PaddingMode.None,
+        //        Mode = CipherMode.ECB
+        //    };
+        //    using (ICryptoTransform decrypt = aes.CreateDecryptor(Key, null))
+        //    {
+        //        byte[] dest = decrypt.TransformFinalBlock(data, 0, data.Length);
+        //        decrypt.Dispose();
+        //        return dest;
+        //    }
+        //}
 
         // TODO (maybe)
         private void Test(object sender, RoutedEventArgs e)
