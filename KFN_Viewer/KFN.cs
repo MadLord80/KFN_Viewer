@@ -211,32 +211,32 @@ public class KFN
             }
             //propertiesView.ItemsSource = properties;
 
-            byte[] numOfFiles = new byte[4];
-            fs.Read(numOfFiles, 0, numOfFiles.Length);
-            int filesCount = BitConverter.ToInt32(numOfFiles, 0);
-            while (filesCount > 0)
+            byte[] numOfResources = new byte[4];
+            fs.Read(numOfResources, 0, numOfResources.Length);
+            int resourcesCount = BitConverter.ToInt32(numOfResources, 0);
+            while (resourcesCount > 0)
             {
-                byte[] fileNameLenght = new byte[4];
-                byte[] fileType = new byte[4];
-                byte[] fileLenght = new byte[4];
-                byte[] fileEncryptedLenght = new byte[4];
-                byte[] fileOffset = new byte[4];
-                byte[] fileEncrypted = new byte[4];
+                byte[] resourceNameLenght = new byte[4];
+                byte[] resourceType = new byte[4];
+                byte[] resourceLenght = new byte[4];
+                byte[] resourceEncryptedLenght = new byte[4];
+                byte[] resourceOffset = new byte[4];
+                byte[] resourceEncrypted = new byte[4];
 
-                fs.Read(fileNameLenght, 0, fileNameLenght.Length);
-                byte[] fileName = new byte[BitConverter.ToUInt32(fileNameLenght, 0)];
-                fs.Read(fileName, 0, fileName.Length);
-                fs.Read(fileType, 0, fileType.Length);
-                fs.Read(fileLenght, 0, fileLenght.Length);
-                fs.Read(fileOffset, 0, fileOffset.Length);
-                fs.Read(fileEncryptedLenght, 0, fileEncryptedLenght.Length);
-                fs.Read(fileEncrypted, 0, fileEncrypted.Length);
-                int encrypted = BitConverter.ToInt32(fileEncrypted, 0);
+                fs.Read(resourceNameLenght, 0, resourceNameLenght.Length);
+                byte[] resourceName = new byte[BitConverter.ToUInt32(resourceNameLenght, 0)];
+                fs.Read(resourceName, 0, resourceName.Length);
+                fs.Read(resourceType, 0, resourceType.Length);
+                fs.Read(resourceLenght, 0, resourceLenght.Length);
+                fs.Read(resourceOffset, 0, resourceOffset.Length);
+                fs.Read(resourceEncryptedLenght, 0, resourceEncryptedLenght.Length);
+                fs.Read(resourceEncrypted, 0, resourceEncrypted.Length);
+                int encrypted = BitConverter.ToInt32(resourceEncrypted, 0);
 
                 if (filesEncoding == 0 && filesEncodingAuto == 20127)
                 {
                     UniversalDetector Det = new UniversalDetector(null);
-                    Det.HandleData(fileName, 0, fileName.Length);
+                    Det.HandleData(resourceName, 0, resourceName.Length);
                     Det.DataEnd();
                     string enc = Det.GetDetectedCharset();
                     if (enc != null && enc != "Not supported")
@@ -259,17 +259,17 @@ public class KFN
                 }
 
                 int useEncoding = (filesEncoding != 0) ? filesEncoding : filesEncodingAuto;
-                string fName = new string(Encoding.GetEncoding(useEncoding).GetChars(fileName));
+                string fName = new string(Encoding.GetEncoding(useEncoding).GetChars(resourceName));
 
                 resources.Add(new KFN.ResorceFile(
-                    KFN.GetFileType(fileType),
+                    KFN.GetFileType(resourceType),
                     fName,
-                    BitConverter.ToInt32(fileEncryptedLenght, 0),
-                    BitConverter.ToInt32(fileOffset, 0),
+                    BitConverter.ToInt32(resourceEncryptedLenght, 0),
+                    BitConverter.ToInt32(resourceOffset, 0),
                     (encrypted == 0) ? false : true
                 ));
 
-                filesCount--;
+                resourcesCount--;
             }
             endOfHeaderOffset = fs.Position;
             resourcesView.ItemsSource = resources;
