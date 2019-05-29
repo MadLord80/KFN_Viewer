@@ -330,6 +330,14 @@ public class KFN
         //}
     }
 
+    public string GetAudioSource()
+    {
+        if (this.properties.Count == 0) { return null; }
+        //1,I,ddt_-_chto_takoe_osen'.mp3
+        KeyValuePair<string, string> sourceProp = this.properties.Where(kv => kv.Key == "Source").FirstOrDefault();
+        return sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last();
+    }
+
     public byte[] GetDataFromResource(ResorceFile resource)
     {
         byte[] data = new byte[resource.FileLength];

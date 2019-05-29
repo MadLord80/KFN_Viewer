@@ -152,7 +152,7 @@ namespace KFN_Viewer
 
         private byte[] CreateEMZ()
         {
-            string audioFile = GetAudioSource();
+            string audioFile = KFN.GetAudioSource();
             if (audioFile == null) { return null; }
             KFN.ResorceFile audioResource = KFN.Resorces.Where(r => r.FileName == audioFile).FirstOrDefault();
             if (audioResource == null) { return null; }
@@ -196,13 +196,13 @@ namespace KFN_Viewer
             }
         }
 
-        private string GetAudioSource()
-        {
-            if (KFN.Properties.Count == 0) { return null; }
-            //1,I,ddt_-_chto_takoe_osen'.mp3
-            KeyValuePair<string, string> sourceProp = KFN.Properties.Where(kv => kv.Key == "Source").FirstOrDefault();
-            return sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last();
-        }
+        //private string GetAudioSource()
+        //{
+        //    if (KFN.Properties.Count == 0) { return null; }
+        //    //1,I,ddt_-_chto_takoe_osen'.mp3
+        //    KeyValuePair<string, string> sourceProp = KFN.Properties.Where(kv => kv.Key == "Source").FirstOrDefault();
+        //    return sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last();
+        //}
         
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
         {
@@ -223,9 +223,9 @@ namespace KFN_Viewer
 
         private void UpdateKFN()
         {
-            propertiesView.ItemsSource = null;
+            //propertiesView.ItemsSource = null;
             //properties.Clear();
-            resourcesView.ItemsSource = null;
+            //resourcesView.ItemsSource = null;
             //resources.Clear();
             ToEMZButton.IsEnabled = false;
             fileNameLabel.Content = "KFN file: " + KFN.FileName;
@@ -671,6 +671,8 @@ namespace KFN_Viewer
 
         private void TestButton_Click(object sender, RoutedEventArgs e)
         {
+            Window songINI = new SongINIWindow(KFN);
+            songINI.Show();
         }
 
 

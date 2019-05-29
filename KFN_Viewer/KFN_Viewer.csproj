@@ -78,6 +78,9 @@
     <Compile Include="ParseINI\Parser\ConcatenateDuplicatedKeysIniDataParser.cs" />
     <Compile Include="ParseINI\Parser\IniDataParser.cs" />
     <Compile Include="ParseINI\StreamIniDataParser.cs" />
+    <Compile Include="SongINIWindow.xaml.cs">
+      <DependentUpon>SongINIWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Themes\LeftMarginMultiplierConverter.cs" />
     <Compile Include="Themes\TreeViewItemExtensions.cs" />
     <Compile Include="uchardet\ByteBuffer.cs" />
@@ -160,6 +163,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="PlayWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SongINIWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
