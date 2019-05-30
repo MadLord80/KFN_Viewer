@@ -10,8 +10,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.IO.Compression;
 
-//using Mozilla.NUniversalCharDet;
-using IniParser.Model;
+using Mozilla.NUniversalCharDet;
+//using IniParser.Model;
 
 namespace KFN_Viewer
 {
@@ -100,21 +100,21 @@ namespace KFN_Viewer
                 }
             }
 
-            if (resource.FileType == "Text" || resource.FileType == "Lyrics" || resource.FileType == "Image")
+            if (resource.FileType == "Text" || resource.FileType == "Config" || resource.FileType == "Image")
             {
                 System.Windows.Controls.MenuItem viewItem = new System.Windows.Controls.MenuItem() { Header = "View" };
                 viewItem.Click += ViewResourceButtonClick;
                 rvcontext.Items.Add(viewItem);
 
-                if (resource.FileType == "Lyrics")
-                {
-                    System.Windows.Controls.MenuItem toLRCItem = new System.Windows.Controls.MenuItem() { Header = "View as Extended LRC" };
-                    toLRCItem.Click += ExportToLrcButtonClick;
-                    rvcontext.Items.Add(toLRCItem);
-                    System.Windows.Controls.MenuItem toELYRItem = new System.Windows.Controls.MenuItem() { Header = "View as ELYR" };
-                    toELYRItem.Click += ExportToElyrButtonClick;
-                    rvcontext.Items.Add(toELYRItem);
-                }
+                //if (resource.FileType == "Lyrics")
+                //{
+                //    System.Windows.Controls.MenuItem toLRCItem = new System.Windows.Controls.MenuItem() { Header = "View as Extended LRC" };
+                //    toLRCItem.Click += ExportToLrcButtonClick;
+                //    rvcontext.Items.Add(toLRCItem);
+                //    System.Windows.Controls.MenuItem toELYRItem = new System.Windows.Controls.MenuItem() { Header = "View as ELYR" };
+                //    toELYRItem.Click += ExportToElyrButtonClick;
+                //    rvcontext.Items.Add(toELYRItem);
+                //}
             }
         }
 
@@ -339,19 +339,19 @@ namespace KFN_Viewer
 
         public void ExportToLrcButtonClick(object sender, RoutedEventArgs e)
         {
-            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
+            //KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
-            byte[] data = KFN.GetDataFromResource(resource);
+            //byte[] data = KFN.GetDataFromResource(resource);
 
-            string textStrings = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
-            if (textStrings == null) { return; }
+            //string textStrings = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
+            //if (textStrings == null) { return; }
 
-            Window viewWindow = new ViewWindow(
-                resource.FileName,
-                textStrings,
-                Encoding.GetEncodings().Where(en => en.CodePage == 65001).First().DisplayName
-            );
-            viewWindow.Show();
+            //Window viewWindow = new ViewWindow(
+            //    resource.FileName,
+            //    textStrings,
+            //    Encoding.GetEncodings().Where(en => en.CodePage == 65001).First().DisplayName
+            //);
+            //viewWindow.Show();
         }
 
         public void ExportToElyrButtonClick(object sender, RoutedEventArgs e)
@@ -439,122 +439,124 @@ namespace KFN_Viewer
             return elyrText;
         }
 
-        private string INIToExtLRC(string iniText)
-        {
-            //FileIniDataParser parser = new FileIniDataParser();
-            var parser = new IniParser.Parser.IniDataParser();
-            IniData iniData = parser.Parse(iniText);
-            //using (StreamReader ini = new StreamReader())
+        //private string INIToExtLRC(string iniText)
+        //{
+        //    //FileIniDataParser parser = new FileIniDataParser();
+        //    var parser = new IniParser.Parser.IniDataParser();
+        //    IniData iniData = parser.Parse(iniText);
+        //    //using (StreamReader ini = new StreamReader())
 
-            Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
-            Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
-            string[] words = { };
-            int[] timings = { };
-            int lines = 0;
-            // remove double spaces
-            iniText = iniText.Replace("  ", " ");
-            foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                Match texts = textRegex.Match(str);
-                Match syncs = syncRegex.Match(str);
-                if (texts.Groups.Count > 1)
-                {
-                    string textLine = texts.Groups[1].Value;
-                    textLine = textLine.Replace(" ", " /");
-                    string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
-                    // + end of line
-                    Array.Resize(ref words, words.Length + linewords.Length + 1);
-                    Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
-                    lines++;
-                }
-                else if (syncs.Groups.Count > 1)
-                {
-                    string songLine = syncs.Groups[1].Value;
-                    int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(s => int.Parse(s)).ToArray();
-                    Array.Resize(ref timings, timings.Length + linetimes.Length);
-                    Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
-                }
-            }
+        //    Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
+        //    Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
+        //    string[] words = { };
+        //    int[] timings = { };
+        //    int lines = 0;
+        //    // remove double spaces
+        //    iniText = iniText.Replace("  ", " ");
+        //    foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+        //    {
+        //        Match texts = textRegex.Match(str);
+        //        Match syncs = syncRegex.Match(str);
+        //        if (texts.Groups.Count > 1)
+        //        {
+        //            string textLine = texts.Groups[1].Value;
+        //            textLine = textLine.Replace(" ", " /");
+        //            string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
+        //            // + end of line
+        //            Array.Resize(ref words, words.Length + linewords.Length + 1);
+        //            Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
+        //            lines++;
+        //        }
+        //        else if (syncs.Groups.Count > 1)
+        //        {
+        //            string songLine = syncs.Groups[1].Value;
+        //            int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+        //                .Select(s => int.Parse(s)).ToArray();
+        //            Array.Resize(ref timings, timings.Length + linetimes.Length);
+        //            Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
+        //        }
+        //    }
 
-            if (timings.Length < words.Length - lines)
-            {
-                System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
-                return null;
-            }
+        //    if (timings.Length < words.Length - lines)
+        //    {
+        //        System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
+        //        return null;
+        //    }
 
-            string lrcText = "";
-            if (words.Length == 0) { return null; }
-            bool newLine = true;
-            int timeIndex = 0;
-            for (int i = 0; i < words.Length; i++)
-            {
-                string startTag = (newLine) ? "[" : "<";
-                string endTag = (newLine) ? "]" : ">";
+        //    string lrcText = "";
+        //    if (words.Length == 0) { return null; }
+        //    bool newLine = true;
+        //    int timeIndex = 0;
+        //    for (int i = 0; i < words.Length; i++)
+        //    {
+        //        string startTag = (newLine) ? "[" : "<";
+        //        string endTag = (newLine) ? "]" : ">";
                 
-                // in end of line: +45 msec
-                int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
-                decimal time = Convert.ToDecimal(timing);
-                decimal min = Math.Truncate(time / 6000);
-                decimal sec = Math.Truncate((time - min * 6000) / 100);
-                decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
+        //        // in end of line: +45 msec
+        //        int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
+        //        decimal time = Convert.ToDecimal(timing);
+        //        decimal min = Math.Truncate(time / 6000);
+        //        decimal sec = Math.Truncate((time - min * 6000) / 100);
+        //        decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
 
-                lrcText += startTag + String.Format("{0:D2}", (int)min) + ":"
-                        + String.Format("{0:D2}", (int)sec) + "."
-                        + String.Format("{0:D2}", (int)msec) + endTag;
+        //        lrcText += startTag + String.Format("{0:D2}", (int)min) + ":"
+        //                + String.Format("{0:D2}", (int)sec) + "."
+        //                + String.Format("{0:D2}", (int)msec) + endTag;
 
-                if (words[i] != null)
-                {
-                    lrcText += words[i];
-                    newLine = false;
-                    timeIndex++;
-                }
-                else
-                {
-                    lrcText += "\n";
-                    newLine = true;
-                }                
-            }
-            KeyValuePair<string, string> artistProp = KFN.Properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
-            KeyValuePair<string, string> titleProp = KFN.Properties.Where(kv => kv.Key == "Title").FirstOrDefault();
-            if (titleProp.Value != null) { lrcText = "[ti:" + titleProp.Value + "]\n" + lrcText; }
-            if (artistProp.Value != null) { lrcText = "[ar:" + artistProp.Value + "]\n" + lrcText; }
+        //        if (words[i] != null)
+        //        {
+        //            lrcText += words[i];
+        //            newLine = false;
+        //            timeIndex++;
+        //        }
+        //        else
+        //        {
+        //            lrcText += "\n";
+        //            newLine = true;
+        //        }                
+        //    }
+        //    KeyValuePair<string, string> artistProp = KFN.Properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+        //    KeyValuePair<string, string> titleProp = KFN.Properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+        //    if (titleProp.Value != null) { lrcText = "[ti:" + titleProp.Value + "]\n" + lrcText; }
+        //    if (artistProp.Value != null) { lrcText = "[ar:" + artistProp.Value + "]\n" + lrcText; }
 
-            return lrcText;
-        }
+        //    return lrcText;
+        //}
 
         public void ViewResourceButtonClick(object sender, RoutedEventArgs e)
         {
             KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
-            if (resource.FileType == "Text" || resource.FileType == "Lyrics")
+            if (resource.FileType == "Text")
             {
-                //byte[] data = GetDataFromResource(resource);
+                byte[] data = KFN.GetDataFromResource(resource);
 
                 ////UTF-8
-                //int detEncoding = 65001;
-                //if (resource.FileType == "Text")
-                //{
-                //    UniversalDetector Det = new UniversalDetector(null);
-                //    Det.HandleData(data, 0, data.Length);
-                //    Det.DataEnd();
-                //    string enc = Det.GetDetectedCharset();
-                //    if (enc != null && enc != "Not supported")
-                //    {
-                //        // fix encoding for 1251 upper case and MAC
-                //        //if (enc == "KOI8-R" || enc == "X-MAC-CYRILLIC") { enc = "WINDOWS-1251"; }
-                //        Encoding denc = Encoding.GetEncoding(enc);
-                //        detEncoding = denc.CodePage;
-                //    }
-                //}
+                int detEncoding = 65001;
+                UniversalDetector Det = new UniversalDetector(null);
+                Det.HandleData(data, 0, data.Length);
+                Det.DataEnd();
+                string enc = Det.GetDetectedCharset();
+                if (enc != null && enc != "Not supported")
+                {
+                    // fix encoding for 1251 upper case and MAC
+                    //if (enc == "KOI8-R" || enc == "X-MAC-CYRILLIC") { enc = "WINDOWS-1251"; }
+                    Encoding denc = Encoding.GetEncoding(enc);
+                    detEncoding = denc.CodePage;
+                }
 
-                //string text = new string(Encoding.GetEncoding(detEncoding).GetChars(data));
-                //Window viewWindow = new ViewWindow(
-                //    resource.FileName, 
-                //    text, 
-                //    Encoding.GetEncodings().Where(en => en.CodePage == detEncoding).First().DisplayName
-                //);
-                //viewWindow.Show();
+                string text = new string(Encoding.GetEncoding(detEncoding).GetChars(data));
+                Window viewWindow = new ViewWindow(
+                    resource.FileName,
+                    text,
+                    Encoding.GetEncodings().Where(en => en.CodePage == detEncoding).First().DisplayName
+                );
+                viewWindow.Show();
+            }
+            else if (resource.FileType == "Config")
+            {
+                Window songINI = new SongINIWindow(KFN);
+                songINI.Show();
             }
             else if (resource.FileType == "Image")
             {
@@ -671,8 +673,9 @@ namespace KFN_Viewer
 
         private void TestButton_Click(object sender, RoutedEventArgs e)
         {
-            Window songINI = new SongINIWindow(KFN);
-            songINI.Show();
+            //if (KFN == null) { return; }
+            //Window songINI = new SongINIWindow(KFN);
+            //songINI.Show();
         }
 
 
@@ -681,51 +684,51 @@ namespace KFN_Viewer
         //https://ru.stackoverflow.com/questions/630777/%D0%97%D0%B0%D0%BA%D1%80%D0%B0%D1%81%D0%B8%D1%82%D1%8C-%D1%82%D0%B5%D0%BA%D1%81%D1%82-%D1%81%D0%BB%D0%BE%D0%B2%D0%BE-%D0%B1%D1%83%D0%BA%D0%B2%D1%83
     }
 
-    public class ViewCellTemplateSelector : DataTemplateSelector
-    {
-        private DataTemplate t1;
+    //public class ViewCellTemplateSelector : DataTemplateSelector
+    //{
+    //    private DataTemplate t1;
 
-        public ViewCellTemplateSelector(DataTemplate template1)
-        {
-            this.t1 = template1;
-        }
+    //    public ViewCellTemplateSelector(DataTemplate template1)
+    //    {
+    //        this.t1 = template1;
+    //    }
 
-        public override DataTemplate SelectTemplate(object item, DependencyObject container)
-        {
-            KFN.ResorceFile resource = (item as KFN.ResorceFile);
-            if (resource.FileType == "Text" || resource.FileType == "Lyrics" || resource.FileType == "Image")
-            {
-                return this.t1;
-            }
+    //    public override DataTemplate SelectTemplate(object item, DependencyObject container)
+    //    {
+    //        KFN.ResorceFile resource = (item as KFN.ResorceFile);
+    //        if (resource.FileType == "Text" || resource.FileType == "Lyrics" || resource.FileType == "Image")
+    //        {
+    //            return this.t1;
+    //        }
 
-            DataTemplate viewColumnEmptyTemplate = new DataTemplate();
-            FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
-            viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
-            return viewColumnEmptyTemplate;
-        }
-    }
+    //        DataTemplate viewColumnEmptyTemplate = new DataTemplate();
+    //        FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
+    //        viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
+    //        return viewColumnEmptyTemplate;
+    //    }
+    //}
 
-    public class LyricCellTemplateSelector : DataTemplateSelector
-    {
-        private DataTemplate t1;
+    //public class LyricCellTemplateSelector : DataTemplateSelector
+    //{
+    //    private DataTemplate t1;
 
-        public LyricCellTemplateSelector(DataTemplate template1)
-        {
-            this.t1 = template1;
-        }
+    //    public LyricCellTemplateSelector(DataTemplate template1)
+    //    {
+    //        this.t1 = template1;
+    //    }
 
-        public override DataTemplate SelectTemplate(object item, DependencyObject container)
-        {
-            KFN.ResorceFile resource = (item as KFN.ResorceFile);
-            if (resource.FileType == "Lyrics")
-            {
-                return this.t1;
-            }
+    //    public override DataTemplate SelectTemplate(object item, DependencyObject container)
+    //    {
+    //        KFN.ResorceFile resource = (item as KFN.ResorceFile);
+    //        if (resource.FileType == "Lyrics")
+    //        {
+    //            return this.t1;
+    //        }
 
-            DataTemplate viewColumnEmptyTemplate = new DataTemplate();
-            FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
-            viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
-            return viewColumnEmptyTemplate;
-        }
-    }
+    //        DataTemplate viewColumnEmptyTemplate = new DataTemplate();
+    //        FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
+    //        viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
+    //        return viewColumnEmptyTemplate;
+    //    }
+    //}
 }

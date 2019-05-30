@@ -5,13 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KFN_Viewer"
         mc:Ignorable="d"
-        Title="Song.ini" Height="450" Width="800"
+        Title="Song.ini" Height="513.83" Width="800"
         Style="{StaticResource {x:Type Window}}">
     <Grid>
-        <ListView x:Name="iniBlocksView" Style="{StaticResource ListViewWithGridViewStyle}" Height="352" Margin="10,42,466,0" VerticalAlignment="Top" Width="316"/>
+        <ListView x:Name="iniBlocksView" HorizontalAlignment="Left" VerticalAlignment="Top" Style="{StaticResource ListViewWithGridViewStyle}" Height="350" Margin="10,42,466,26" Width="316" MouseUp="IniBlocksView_MouseUp"/>
         <Label Content="Blocks" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-        <ScrollViewer Height="352" Width="432" Margin="350,42,10,26">
-            <TextBox x:Name="blockContent" Height="352" TextWrapping="Wrap" VerticalAlignment="Top" Width="432"/>
-        </ScrollViewer>
+        <!--<ScrollViewer Margin="350,42,10,26">-->
+            <TextBox x:Name="blockContent" TextWrapping="Wrap" Width="432" Height="350" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="350,42,0,0" VerticalScrollBarVisibility="Auto"/>
+        <!--</ScrollViewer>-->
+        <Label Content="Content" HorizontalAlignment="Left" Margin="350,10,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="toLRCButton" Content="To Ext LRC" HorizontalAlignment="Left" Margin="350,407,0,0" VerticalAlignment="Top" Width="75" Click="ToLRCButton_Click"/>
     </Grid>
 </Window>

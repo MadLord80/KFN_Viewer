@@ -6,6 +6,7 @@ using System.Text;
 using System.Security.Cryptography;
 
 using Mozilla.NUniversalCharDet;
+using System.Text.RegularExpressions;
 
 public class KFN
 {
@@ -47,7 +48,7 @@ public class KFN
     };
     private Dictionary<int, string> fileTypes = new Dictionary<int, string> {
         {0, "Text"},
-        {1, "Lyrics"},
+        {1, "Config"},
         {2, "Audio"},
         {3, "Image"},
         {4, "Font"},
@@ -328,6 +329,90 @@ public class KFN
         //    KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
         //    if (audioResource != null && lyricResource != null) { ToEMZButton.IsEnabled = true; }
         //}
+    }
+
+    public string INIToExtLRC(string iniText)
+    {
+        //FileIniDataParser parser = new FileIniDataParser();
+        //var parser = new IniParser.Parser.IniDataParser();
+        //IniData iniData = parser.Parse(iniText);
+        //using (StreamReader ini = new StreamReader())
+
+        Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
+        Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
+        string[] words = { };
+        int[] timings = { };
+        int lines = 0;
+        // remove double spaces
+        iniText = iniText.Replace("  ", " ");
+        foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            Match texts = textRegex.Match(str);
+            Match syncs = syncRegex.Match(str);
+            if (texts.Groups.Count > 1)
+            {
+                string textLine = texts.Groups[1].Value;
+                textLine = textLine.Replace(" ", " /");
+                string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
+                // + end of line
+                Array.Resize(ref words, words.Length + linewords.Length + 1);
+                Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
+                lines++;
+            }
+            else if (syncs.Groups.Count > 1)
+            {
+                string songLine = syncs.Groups[1].Value;
+                int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.Parse(s)).ToArray();
+                Array.Resize(ref timings, timings.Length + linetimes.Length);
+                Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
+            }
+        }
+
+        if (timings.Length < words.Length - lines)
+        {
+            //System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
+            return "Fail convert: words - " + words.Length + ", timings - " + timings.Length;
+        }
+
+        string lrcText = "";
+        if (words.Length == 0) { return null; }
+        bool newLine = true;
+        int timeIndex = 0;
+        for (int i = 0; i < words.Length; i++)
+        {
+            string startTag = (newLine) ? "[" : "<";
+            string endTag = (newLine) ? "]" : ">";
+
+            // in end of line: +45 msec
+            int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
+            decimal time = Convert.ToDecimal(timing);
+            decimal min = Math.Truncate(time / 6000);
+            decimal sec = Math.Truncate((time - min * 6000) / 100);
+            decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
+
+            lrcText += startTag + String.Format("{0:D2}", (int)min) + ":"
+                    + String.Format("{0:D2}", (int)sec) + "."
+                    + String.Format("{0:D2}", (int)msec) + endTag;
+
+            if (words[i] != null)
+            {
+                lrcText += words[i];
+                newLine = false;
+                timeIndex++;
+            }
+            else
+            {
+                lrcText += "\n";
+                newLine = true;
+            }
+        }
+        KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+        KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+        if (titleProp.Value != null) { lrcText = "[ti:" + titleProp.Value + "]\n" + lrcText; }
+        if (artistProp.Value != null) { lrcText = "[ar:" + artistProp.Value + "]\n" + lrcText; }
+
+        return lrcText;
     }
 
     public string GetAudioSource()

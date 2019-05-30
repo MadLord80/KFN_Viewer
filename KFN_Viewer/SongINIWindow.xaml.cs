@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using IniParser.Model;
 using System.Collections.Generic;
 using System.Windows.Controls;
+using System.IO;
 
 namespace KFN_Viewer
 {
@@ -15,9 +16,13 @@ namespace KFN_Viewer
     /// </summary>
     public partial class SongINIWindow : Window
     {
+        private KFN KFN;
+
         public SongINIWindow(KFN KFN)
         {
             InitializeComponent();
+
+            this.KFN = KFN;
 
             GridView blocksGrid = new GridView
             {
@@ -43,6 +48,8 @@ namespace KFN_Viewer
             });
             iniBlocksView.View = blocksGrid;
 
+            toLRCButton.IsEnabled = false;
+
             this.ParseINI(KFN);
         }
 
@@ -58,12 +65,18 @@ namespace KFN_Viewer
             public string Type { get { return this.type; } }
             public string Content { get { return this.content; } }
 
-            public BlockInfo(string name, string id, string type, string content)
+            public BlockInfo(SectionData block, string KFNBlockType)
             {
-                this.name = name;
-                this.id = id;
-                this.type = type;
-                this.content = content;
+                this.name = block.SectionName;
+                this.id = block.Keys["ID"];
+                this.type = KFNBlockType;
+
+                string blockContent = "";
+                foreach (KeyData key in block.Keys)
+                {
+                    blockContent += key.KeyName + "=" + key.Value + "\n";
+                }
+                this.content = blockContent;
             }
         }
 
@@ -71,7 +84,11 @@ namespace KFN_Viewer
         {
             var parser = new IniParser.Parser.IniDataParser();
             KFN.ResorceFile resource = KFN.Resorces.Where(r => r.FileName == "Song.ini").First();
-            string iniText = new string(Encoding.UTF8.GetChars(KFN.GetDataFromResource(resource)));
+            byte[] data = KFN.GetDataFromResource(resource);
+            // skip null at the end
+            data = data.Reverse().SkipWhile(d => d == 0).ToArray().Reverse().ToArray();
+            string iniText = new string(Encoding.UTF8.GetChars(data));
+
             IniData iniData = parser.Parse(iniText);
 
             List<BlockInfo> blocksData = new List<BlockInfo>();
@@ -79,15 +96,34 @@ namespace KFN_Viewer
             {
                 string blockId = block.Keys["ID"];
                 blocksData.Add(new BlockInfo(
-                    block.SectionName,
-                    blockId,
-                    (blockId != null) ? KFN.GetIniBlockType(Convert.ToInt32(blockId)) : "",
-                    block.ToString()
+                    block,
+                    (blockId != null) ? KFN.GetIniBlockType(Convert.ToInt32(blockId)) : ""
                 ));
             }
 
             iniBlocksView.ItemsSource = blocksData;
             this.AutoSizeColumns(iniBlocksView.View as GridView);
+        }
+
+        private void IniBlocksView_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
+            blockContent.Text = block.Content;
+            toLRCButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
+        }
+
+        private void ToLRCButton_Click(object sender, RoutedEventArgs e)
+        {
+            BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
+            FileInfo sourceFile = new FileInfo(KFN.GetAudioSource());
+            string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
+            string extLRC = KFN.INIToExtLRC(block.Content);
+            Window viewWindow = new ViewWindow(
+                lrcFileName,
+                extLRC,
+                "UTF-8"
+            );
+            viewWindow.Show();
         }
 
         private void AutoSizeColumns(GridView gv)
