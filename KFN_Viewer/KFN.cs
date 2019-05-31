@@ -90,7 +90,7 @@ public class KFN
         get { return this.unknownProperties; }
     }
 
-    public List<ResorceFile> Resorces
+    public List<ResorceFile> Resources
     {
         get { return this.resources; }
     }
@@ -159,18 +159,12 @@ public class KFN
         }
     }
 
-    //private void ReadFile(int filesEncoding = 0)
     public void ReadFile(int filesEncoding = 0)
     {
         this.error = null;
-        //propertiesView.ItemsSource = null;
         this.properties.Clear();
         this.unknownProperties.Clear();
-        //resourcesView.ItemsSource = null;
         this.resources.Clear();
-        //ToEMZButton.IsEnabled = false;
-
-        //fileNameLabel.Content = "KFN file: " + KFNFile;
 
         using (FileStream fs = new FileStream(this.fileName, FileMode.Open, FileAccess.Read))
         {
@@ -207,7 +201,6 @@ public class KFN
                     {
                         if (SpropName.Contains("unknown"))
                         {
-                            //PropertyWindow.Text += SpropName + ": " + BitConverter.ToUInt32(propValue, 0) + "\n";
                             this.unknownProperties.Add(SpropName + ": " + BitConverter.ToUInt32(propValue, 0));
                         }
                         if (propName != SpropName)
@@ -232,7 +225,6 @@ public class KFN
                     {
                         if (SpropName.Contains("unknown"))
                         {
-                            //PropertyWindow.Text += SpropName + ": " + new string(Encoding.UTF8.GetChars(value)) + "\n";
                             this.unknownProperties.Add(SpropName + ": " + new string(Encoding.UTF8.GetChars(value)));
                         }
                         if (propName != SpropName)
@@ -243,14 +235,11 @@ public class KFN
                 }
                 else
                 {
-                    //PropertyWindow.Text += SpropName + ": unknown block type - " + prop[4] + "!\n";
-                    //this.properties.Add(SpropName, "unknown block type - " + prop[4]);
                     this.error = "unknown property block type - " + prop[4];
                     return;
                 }
                 maxProps--;
             }
-            //propertiesView.ItemsSource = properties;
 
             byte[] numOfResources = new byte[4];
             fs.Read(numOfResources, 0, numOfResources.Length);
@@ -286,18 +275,15 @@ public class KFN
                         if (enc == "KOI8-R" || enc == "X-MAC-CYRILLIC") { enc = "WINDOWS-1251"; }
                         Encoding denc = Encoding.GetEncoding(enc);
                         resourceNamesEncodingAuto = denc.CodePage;
-                        //AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
                         this.autoDetectEncoding = denc.CodePage + ": " + denc.EncodingName;
                     }
                     else if (enc == null)
                     {
                         Encoding denc = Encoding.GetEncoding(resourceNamesEncodingAuto);
-                        //AutoDetectedEncLabel.Content = denc.CodePage + ": " + denc.EncodingName;
                         this.autoDetectEncoding = denc.CodePage + ": " + denc.EncodingName;
                     }
                     else
                     {
-                        //AutoDetectedEncLabel.Content = "No supported: use " + Encoding.GetEncoding(filesEncodingAuto).EncodingName;
                         this.autoDetectEncoding = "No supported: use " + Encoding.GetEncoding(resourceNamesEncodingAuto).EncodingName;
                     }
                 }
@@ -316,67 +302,62 @@ public class KFN
                 resourcesCount--;
             }
             this.endOfHeaderOffset = fs.Position;
-            //resourcesView.ItemsSource = resources;
-            //AutoSizeColumns(resourcesView.View as GridView);
         }
-        //FilesEncodingElement.IsEnabled = true;
-        //if (resources.Count > 1) { ExportAllButton.IsEnabled = true; }
+    }
 
-        //string sourceName = GetAudioSource();
-        //if (sourceName != null)
-        //{
-        //    KFN.ResorceFile audioResource = resources.Where(r => r.FileName == sourceName).FirstOrDefault();
-        //    KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-        //    if (audioResource != null && lyricResource != null) { ToEMZButton.IsEnabled = true; }
-        //}
+    public string INIToELYR(string iniText)
+    {
+        Dictionary<string[], int[]> TWords = this.parseTextFromINI(iniText);
+        if (TWords == null) { return null; }
+        string[] words = TWords.First().Key;
+        int[] timings = TWords.First().Value;
+
+        if (words.Length == 0)
+        {
+            this.error = "Not found words in ini block!";
+            return null;
+        }
+        bool newLine = false;
+        int timeIndex = 1;
+        int timing = timings[0] * 10;
+        string elyrText = timing + ":" + timing + "=\\" + words[0] + "\r\n";
+        for (int i = 1; i < words.Length; i++)
+        {
+            if (!newLine)
+            {
+                timing = timings[timeIndex] * 10;
+                elyrText += timing + ":" + timing + "=";
+            }
+
+            if (words[i] != null)
+            {
+                elyrText += words[i] + "\r\n";
+                newLine = false;
+                if (i < words.Length - 2) { timeIndex++; }
+            }
+            else
+            {
+                elyrText += "\\";
+                newLine = true;
+            }
+        }
+
+        return elyrText;
     }
 
     public string INIToExtLRC(string iniText)
     {
-        //FileIniDataParser parser = new FileIniDataParser();
-        //var parser = new IniParser.Parser.IniDataParser();
-        //IniData iniData = parser.Parse(iniText);
-        //using (StreamReader ini = new StreamReader())
-
-        Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
-        Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
-        string[] words = { };
-        int[] timings = { };
-        int lines = 0;
-        // remove double spaces
-        iniText = iniText.Replace("  ", " ");
-        foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
-        {
-            Match texts = textRegex.Match(str);
-            Match syncs = syncRegex.Match(str);
-            if (texts.Groups.Count > 1)
-            {
-                string textLine = texts.Groups[1].Value;
-                textLine = textLine.Replace(" ", " /");
-                string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
-                // + end of line
-                Array.Resize(ref words, words.Length + linewords.Length + 1);
-                Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
-                lines++;
-            }
-            else if (syncs.Groups.Count > 1)
-            {
-                string songLine = syncs.Groups[1].Value;
-                int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => int.Parse(s)).ToArray();
-                Array.Resize(ref timings, timings.Length + linetimes.Length);
-                Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
-            }
-        }
-
-        if (timings.Length < words.Length - lines)
-        {
-            //System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
-            return "Fail convert: words - " + words.Length + ", timings - " + timings.Length;
-        }
+        Dictionary<string[], int[]> TWords = this.parseTextFromINI(iniText);
+        if (TWords == null) { return null; }
+        string[] words = TWords.First().Key;
+        int[] timings = TWords.First().Value;
 
         string lrcText = "";
-        if (words.Length == 0) { return null; }
+        if (words.Length == 0)
+        {
+            this.error = "Not found words in ini block!";
+            return null;
+        }
         bool newLine = true;
         int timeIndex = 0;
         for (int i = 0; i < words.Length; i++)
@@ -413,6 +394,55 @@ public class KFN
         if (artistProp.Value != null) { lrcText = "[ar:" + artistProp.Value + "]\n" + lrcText; }
 
         return lrcText;
+    }
+
+    private Dictionary<string[], int[]> parseTextFromINI(string iniBlock)
+    {
+        Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
+        Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
+        string[] words = { };
+        int[] timings = { };
+        int lines = 0;
+        // remove double spaces
+        string iniText = iniBlock.Replace("  ", " ");
+        foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            Match texts = textRegex.Match(str);
+            Match syncs = syncRegex.Match(str);
+            if (texts.Groups.Count > 1)
+            {
+                string textLine = texts.Groups[1].Value;
+                textLine = textLine.Replace(" ", " /");
+                string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
+                // + end of line
+                Array.Resize(ref words, words.Length + linewords.Length + 1);
+                Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
+                lines++;
+            }
+            else if (syncs.Groups.Count > 1)
+            {
+                string songLine = syncs.Groups[1].Value;
+                int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.Parse(s)).ToArray();
+                Array.Resize(ref timings, timings.Length + linetimes.Length);
+                Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
+            }
+        }
+
+        if (timings.Length < words.Length - lines)
+        {
+            this.error = "Fail convert: words - " + words.Length + ", timings - " + timings.Length;
+            return null;
+        }
+
+        //Dictionary<string, int> TWords = new Dictionary<string, int>();
+        Dictionary<string[], int[]> TWords = new Dictionary<string[], int[]>();
+        //var ttt = new { words, timings };
+        //for (int i = 0; i < words.Length; i++)
+        //{
+            TWords.Add(words, timings);
+        //}
+        return TWords;
     }
 
     public string GetAudioSource()

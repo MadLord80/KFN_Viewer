@@ -63,7 +63,6 @@
         <Label Content="Auto detect is:" HorizontalAlignment="Left" Margin="656,8,0,0" VerticalAlignment="Top" Width="91"/>
         <Label x:Name="AutoDetectedEncLabel" Content="" HorizontalAlignment="Left" Margin="747,8,0,0" VerticalAlignment="Top" Width="172"/>
         <Button x:Name="ExportAllButton" Content="Export all" HorizontalAlignment="Left" VerticalAlignment="Top" Width="96" Margin="823,97,0,0" IsEnabled="False" Click="ExportAllButton_Click"/>
-        <Button x:Name="ToEMZButton" Content="Create EMZ" HorizontalAlignment="Left" VerticalAlignment="Top" Width="96" Margin="710,97,0,0" Click="CreateEMZButtonClick" IsEnabled="False"/>
 
     </Grid>
 </Window>

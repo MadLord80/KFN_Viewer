@@ -8,6 +8,8 @@ using IniParser.Model;
 using System.Collections.Generic;
 using System.Windows.Controls;
 using System.IO;
+using System.IO.Compression;
+using System.Windows.Forms;
 
 namespace KFN_Viewer
 {
@@ -17,6 +19,7 @@ namespace KFN_Viewer
     public partial class SongINIWindow : Window
     {
         private KFN KFN;
+        private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
 
         public SongINIWindow(KFN KFN)
         {
@@ -49,6 +52,8 @@ namespace KFN_Viewer
             iniBlocksView.View = blocksGrid;
 
             toLRCButton.IsEnabled = false;
+            toELYRButton.IsEnabled = false;
+            createEMZButton.IsEnabled = false;
 
             this.ParseINI(KFN);
         }
@@ -83,7 +88,7 @@ namespace KFN_Viewer
         private void ParseINI(KFN KFN)
         {
             var parser = new IniParser.Parser.IniDataParser();
-            KFN.ResorceFile resource = KFN.Resorces.Where(r => r.FileName == "Song.ini").First();
+            KFN.ResorceFile resource = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
             byte[] data = KFN.GetDataFromResource(resource);
             // skip null at the end
             data = data.Reverse().SkipWhile(d => d == 0).ToArray().Reverse().ToArray();
@@ -110,6 +115,98 @@ namespace KFN_Viewer
             BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
             blockContent.Text = block.Content;
             toLRCButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
+            toELYRButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
+            createEMZButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
+        }
+
+        private void createEMZButton_Click(object sender, RoutedEventArgs e)
+        {
+            string audioFile = this.KFN.GetAudioSource();
+            if (audioFile == null)
+            {
+                System.Windows.MessageBox.Show("Can`t find audio source property!");
+                return;
+            }
+            KFN.ResorceFile audioResource = this.KFN.Resources.Where(r => r.FileName == audioFile).FirstOrDefault();
+            if (audioResource == null)
+            {
+                System.Windows.MessageBox.Show("Can`t find resource for audio source property!");
+                return;
+            }
+
+            KFN.ResorceFile lyricResource = this.KFN.Resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
+            if (lyricResource == null)
+            {
+                System.Windows.MessageBox.Show("Can`t find Song.ini!");
+                return;
+            }
+
+            FileInfo sourceFile = new FileInfo(audioFile);
+            string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
+
+            BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
+            string elyrText = this.KFN.INIToELYR(block.Content);
+            if (elyrText == null)
+            {
+                System.Windows.MessageBox.Show((KFN.isError != null)
+                    ? KFN.isError
+                    : "Fail to create ELYR!");
+                return;
+            }
+
+            byte[] bom = Encoding.Unicode.GetPreamble();
+            string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
+            byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.Unicode, Encoding.UTF8.GetBytes(elyrHeader + elyrText));
+            Array.Resize(ref bom, bom.Length + elyr.Length);
+            Array.Copy(elyr, 0, bom, 2, elyr.Length);
+
+            using (MemoryStream memStream = new MemoryStream())
+            {
+                //int cp = System.Globalization.CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
+                int cp = 866;
+                using (ZipArchive archive = new ZipArchive(memStream, ZipArchiveMode.Create, true, Encoding.GetEncoding(cp)))
+                {
+                    ZipArchiveEntry lyricEntry = archive.CreateEntry(elyrFileName);
+                    using (MemoryStream lyricBody = new MemoryStream(bom))
+                    using (Stream ls = lyricEntry.Open())
+                    {
+                        lyricBody.CopyTo(ls);
+                    }
+
+                    ZipArchiveEntry audioEntry = archive.CreateEntry(audioResource.FileName);
+                    using (MemoryStream audioBody = new MemoryStream(KFN.GetDataFromResource(audioResource)))
+                    using (Stream aus = audioEntry.Open())
+                    {
+                        audioBody.CopyTo(aus);
+                    }
+                }
+
+                byte[] emzData = memStream.ToArray();
+                if (emzData != null)
+                {
+                    FileInfo kfnFile = new FileInfo(KFN.FileName);
+                    string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
+                    if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        string exportFolder = FolderBrowserDialog.SelectedPath;
+                        try
+                        {
+                            System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
+                        }
+                        catch (UnauthorizedAccessException error)
+                        {
+                            System.Windows.MessageBox.Show(error.Message);
+                            return;
+                        }
+
+                        using (FileStream fs = new FileStream(exportFolder + "\\" + emzFileName, FileMode.Create, FileAccess.Write))
+                        {
+                            fs.Write(emzData, 0, emzData.Length);
+                        }
+                        System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
+                    }
+                }
+            }
         }
 
         private void ToLRCButton_Click(object sender, RoutedEventArgs e)
@@ -118,9 +215,38 @@ namespace KFN_Viewer
             FileInfo sourceFile = new FileInfo(KFN.GetAudioSource());
             string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
             string extLRC = KFN.INIToExtLRC(block.Content);
+            if (extLRC == null)
+            {
+                System.Windows.MessageBox.Show((KFN.isError != null)
+                    ? KFN.isError
+                    : "Fail to create Ext LRC!");
+                return;
+            }
             Window viewWindow = new ViewWindow(
                 lrcFileName,
                 extLRC,
+                "UTF-8"
+            );
+            viewWindow.Show();
+        }
+
+
+        private void toELYRButton_Click(object sender, RoutedEventArgs e)
+        {
+            BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
+            FileInfo sourceFile = new FileInfo(KFN.GetAudioSource());
+            string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
+            string elyr = KFN.INIToELYR(block.Content);
+            if (elyr == null)
+            {
+                System.Windows.MessageBox.Show((KFN.isError != null)
+                    ? KFN.isError
+                    : "Fail to create ELYR!");
+                return;
+            }
+            Window viewWindow = new ViewWindow(
+                lrcFileName,
+                elyr,
                 "UTF-8"
             );
             viewWindow.Show();
@@ -145,6 +271,11 @@ namespace KFN_Viewer
                     c.Width = double.NaN;
                 }
             }
+        }
+
+        private void createEMZ2Button_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

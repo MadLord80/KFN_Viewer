@@ -118,84 +118,38 @@ namespace KFN_Viewer
             }
         }
 
-        private void CreateEMZButtonClick(object sender, RoutedEventArgs e)
-        {
-            FileInfo kfnFile = new FileInfo(KFN.FileName);
-            string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
+        //private void CreateEMZButtonClick(object sender, RoutedEventArgs e)
+        //{
+        //    FileInfo kfnFile = new FileInfo(KFN.FileName);
+        //    string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
 
-            FolderBrowserDialog.SelectedPath = kfnFile.DirectoryName;
-            if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                string exportFolder = FolderBrowserDialog.SelectedPath;
-                try
-                {
-                    System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
-                }
-                catch (UnauthorizedAccessException error)
-                {
-                    System.Windows.MessageBox.Show(error.Message);
-                    return;
-                }
+        //    FolderBrowserDialog.SelectedPath = kfnFile.DirectoryName;
+        //    if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        //    {
+        //        string exportFolder = FolderBrowserDialog.SelectedPath;
+        //        try
+        //        {
+        //            System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
+        //        }
+        //        catch (UnauthorizedAccessException error)
+        //        {
+        //            System.Windows.MessageBox.Show(error.Message);
+        //            return;
+        //        }
 
-                byte[] emz = CreateEMZ();
-                if (emz != null)
-                {
-                    ExportTextToFile(emzFileName, emz, exportFolder);
-                    System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
-                }
-                else
-                {
-                    System.Windows.MessageBox.Show("Failed to create EMZ");
-                }
-            }
-        }
-
-        private byte[] CreateEMZ()
-        {
-            string audioFile = KFN.GetAudioSource();
-            if (audioFile == null) { return null; }
-            KFN.ResorceFile audioResource = KFN.Resorces.Where(r => r.FileName == audioFile).FirstOrDefault();
-            if (audioResource == null) { return null; }
-
-            KFN.ResorceFile lyricResource = KFN.Resorces.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-            if (lyricResource == null) { return null; }
-
-            FileInfo sourceFile = new FileInfo(audioFile);
-            string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
-
-            string elyrText = INIToELYR(new string(Encoding.UTF8.GetChars(KFN.GetDataFromResource(lyricResource))));
-
-            byte[] bom = Encoding.Unicode.GetPreamble();
-            string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
-            byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.Unicode, Encoding.UTF8.GetBytes(elyrHeader + elyrText));
-            Array.Resize(ref bom, bom.Length + elyr.Length);
-            Array.Copy(elyr, 0, bom, 2, elyr.Length);
-            
-            using (MemoryStream memStream = new MemoryStream())
-            {
-                //int cp = System.Globalization.CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
-                int cp = 866;
-                using (ZipArchive archive = new ZipArchive(memStream, ZipArchiveMode.Create, true, Encoding.GetEncoding(cp)))
-                {
-                    ZipArchiveEntry lyricEntry = archive.CreateEntry(elyrFileName);
-                    using (MemoryStream lyricBody = new MemoryStream(bom))
-                    using (Stream ls = lyricEntry.Open())
-                    {
-                        lyricBody.CopyTo(ls);
-                    }
-
-                    ZipArchiveEntry audioEntry = archive.CreateEntry(audioResource.FileName);
-                    using (MemoryStream audioBody = new MemoryStream(KFN.GetDataFromResource(audioResource)))
-                    using (Stream aus = audioEntry.Open())
-                    {
-                        audioBody.CopyTo(aus);
-                    }
-                }
-
-                return memStream.ToArray();
-            }
-        }
-
+        //        byte[] emz = CreateEMZ();
+        //        if (emz != null)
+        //        {
+        //            ExportTextToFile(emzFileName, emz, exportFolder);
+        //            System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
+        //        }
+        //        else
+        //        {
+        //            System.Windows.MessageBox.Show("Failed to create EMZ");
+        //        }
+        //    }
+        //}
+        
         //private string GetAudioSource()
         //{
         //    if (KFN.Properties.Count == 0) { return null; }
@@ -227,18 +181,19 @@ namespace KFN_Viewer
             //properties.Clear();
             //resourcesView.ItemsSource = null;
             //resources.Clear();
-            ToEMZButton.IsEnabled = false;
+            //ToEMZButton.IsEnabled = false;
             fileNameLabel.Content = "KFN file: " + KFN.FileName;
             propertiesView.ItemsSource = KFN.Properties;
             PropertyWindow.Text = string.Join("\n", KFN.UnknownProperties);
             AutoDetectedEncLabel.Content = KFN.AutoDetectEncoding;
 
             //endOfHeaderOffset = fs.Position;
-            resourcesView.ItemsSource = KFN.Resorces;
+            resourcesView.ItemsSource = KFN.Resources;
+            resourcesView.Items.Refresh();
             AutoSizeColumns(resourcesView.View as GridView);
 
             FilesEncodingElement.IsEnabled = true;
-            if (KFN.Resorces.Count > 1) { ExportAllButton.IsEnabled = true; }
+            if (KFN.Resources.Count > 1) { ExportAllButton.IsEnabled = true; }
 
             //string sourceName = GetAudioSource();
             //if (sourceName != null)
@@ -354,91 +309,23 @@ namespace KFN_Viewer
             //viewWindow.Show();
         }
 
-        public void ExportToElyrButtonClick(object sender, RoutedEventArgs e)
-        {
-            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
+        //public void ExportToElyrButtonClick(object sender, RoutedEventArgs e)
+        //{
+        //    KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
 
-            byte[] data = KFN.GetDataFromResource(resource);
+        //    byte[] data = KFN.GetDataFromResource(resource);
 
-            string textStrings = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
-            if (textStrings == null) { return; }
+        //    string textStrings = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
+        //    if (textStrings == null) { return; }
 
-            Window viewWindow = new ViewWindow(
-                resource.FileName,
-                textStrings,
-                Encoding.GetEncodings().Where(en => en.CodePage == 65001).First().DisplayName
-            );
-            viewWindow.Show();
-        }
-
-        private string INIToELYR(string iniText)
-        {
-            Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
-            Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
-            string[] words = { };
-            int[] timings = { };
-            int lines = 0;
-            // remove double spaces
-            iniText = iniText.Replace("  ", " ");
-            foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                Match texts = textRegex.Match(str);
-                Match syncs = syncRegex.Match(str);
-                if (texts.Groups.Count > 1)
-                {
-                    string textLine = texts.Groups[1].Value;
-                    textLine = textLine.Replace(" ", " /");
-                    string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
-                    // + end of line
-                    Array.Resize(ref words, words.Length + linewords.Length + 1);
-                    Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
-                    lines++;
-                }
-                else if (syncs.Groups.Count > 1)
-                {
-                    string songLine = syncs.Groups[1].Value;
-                    int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(s => int.Parse(s)).ToArray();
-                    Array.Resize(ref timings, timings.Length + linetimes.Length);
-                    Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
-                }
-            }
-
-            if (timings.Length < words.Length - lines)
-            {
-                System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
-                return null;
-            }
-
-            if (words.Length == 0) { return null; }
-            bool newLine = false;
-            int timeIndex = 1;
-            int timing = timings[0] * 10;
-            string elyrText = timing + ":" + timing + "=\\" + words[0] + "\r\n";
-            for (int i = 1; i < words.Length; i++)
-            {
-                if (!newLine)
-                {
-                    timing = timings[timeIndex] * 10;
-                    elyrText += timing + ":" + timing + "=";
-                }
-
-                if (words[i] != null)
-                {
-                    elyrText += words[i] + "\r\n";
-                    newLine = false;
-                    if (i < words.Length - 2) { timeIndex++; }
-                }
-                else
-                {
-                    elyrText += "\\";
-                    newLine = true;
-                }
-            }
-
-            return elyrText;
-        }
-
+        //    Window viewWindow = new ViewWindow(
+        //        resource.FileName,
+        //        textStrings,
+        //        Encoding.GetEncodings().Where(en => en.CodePage == 65001).First().DisplayName
+        //    );
+        //    viewWindow.Show();
+        //}
+        
         //private string INIToExtLRC(string iniText)
         //{
         //    //FileIniDataParser parser = new FileIniDataParser();
