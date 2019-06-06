@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
+using System.IO.Compression;
 
 using Mozilla.NUniversalCharDet;
 using System.Text.RegularExpressions;
+//using IniParser.Model;
 
 public class KFN
 {
@@ -118,6 +120,33 @@ public class KFN
         if (iniBlockTypes.ContainsKey(id)) { return iniBlockTypes[id]; }
         return "Unknown [" + id + "]";
     }
+
+    //public class BlockInfo
+    //{
+    //    private string name;
+    //    private string id;
+    //    private string type;
+    //    private string content;
+
+    //    public string Name { get { return this.name; } }
+    //    public string Id { get { return this.id; } }
+    //    public string Type { get { return this.type; } }
+    //    public string Content { get { return this.content; } }
+
+    //    public BlockInfo(SectionData block, string KFNBlockType)
+    //    {
+    //        this.name = block.SectionName;
+    //        this.id = block.Keys["ID"];
+    //        this.type = KFNBlockType;
+
+    //        string blockContent = "";
+    //        foreach (KeyData key in block.Keys)
+    //        {
+    //            blockContent += key.KeyName + "=" + key.Value + "\n";
+    //        }
+    //        this.content = blockContent;
+    //    }
+    //}
 
     public class ResorceFile
     {
@@ -305,8 +334,117 @@ public class KFN
         }
     }
 
+    //private void ParseINI()
+    //{
+    //    var parser = new IniParser.Parser.IniDataParser();
+    //    ResorceFile resource = this.Resources.Where(r => r.FileName == "Song.ini").First();
+    //    byte[] data = this.GetDataFromResource(resource);
+    //    // skip null at the end
+    //    data = data.Reverse().SkipWhile(d => d == 0).ToArray().Reverse().ToArray();
+    //    string iniText = new string(Encoding.UTF8.GetChars(data));
+
+    //    IniData iniData = parser.Parse(iniText);
+
+    //    List<BlockInfo> blocksData = new List<BlockInfo>();
+    //    foreach (SectionData block in iniData.Sections)
+    //    {
+    //        string blockId = block.Keys["ID"];
+    //        blocksData.Add(new BlockInfo(
+    //            block,
+    //            (blockId != null) ? this.GetIniBlockType(Convert.ToInt32(blockId)) : ""
+    //        ));
+    //    }
+
+    //    //iniBlocksView.ItemsSource = blocksData;
+    //    //this.AutoSizeColumns(iniBlocksView.View as GridView);
+    //}
+
+    public byte[] createEMZ(string iniText, bool withVideo = false)
+    {
+        this.error = null;
+        string audioFile = this.GetAudioSourceName();
+        if (audioFile == null)
+        {
+            this.error = "Can`t find audio source property!";
+            return null;
+        }
+        ResorceFile audioResource = this.Resources.Where(r => r.FileName == audioFile).FirstOrDefault();
+        if (audioResource == null)
+        {
+            this.error = "Can`t find resource for audio source property!";
+            return null;
+        }
+
+        ResorceFile videoResource = this.GetVideoResource();
+        if (withVideo && videoResource == null)
+        {
+            this.error = "Can`t find video resource!";
+            return null;
+        }
+
+        ResorceFile lyricResource = this.Resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
+        if (lyricResource == null)
+        {
+            this.error = "Can`t find Song.ini!";
+            return null;
+        }
+
+        FileInfo sourceFile = new FileInfo(audioFile);
+        string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
+
+        //BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
+        //string elyrText = this.KFN.INIToELYR(block.Content);
+        string elyrText = this.INIToELYR(iniText);
+        if (elyrText == null)
+        {
+            if (this.error == null) { this.error = "Fail to create ELYR!"; }
+            return null;
+        }
+
+        byte[] bom = Encoding.Unicode.GetPreamble();
+        string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
+        byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.Unicode, Encoding.UTF8.GetBytes(elyrHeader + elyrText));
+        Array.Resize(ref bom, bom.Length + elyr.Length);
+        Array.Copy(elyr, 0, bom, 2, elyr.Length);
+
+        using (MemoryStream memStream = new MemoryStream())
+        {
+            //int cp = System.Globalization.CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
+            int cp = 866;
+            using (ZipArchive archive = new ZipArchive(memStream, ZipArchiveMode.Create, true, Encoding.GetEncoding(cp)))
+            {
+                ZipArchiveEntry lyricEntry = archive.CreateEntry(elyrFileName);
+                using (MemoryStream lyricBody = new MemoryStream(bom))
+                using (Stream ls = lyricEntry.Open())
+                {
+                    lyricBody.CopyTo(ls);
+                }
+
+                ZipArchiveEntry audioEntry = archive.CreateEntry(audioResource.FileName);
+                using (MemoryStream audioBody = new MemoryStream(this.GetDataFromResource(audioResource)))
+                using (Stream aus = audioEntry.Open())
+                {
+                    audioBody.CopyTo(aus);
+                }
+
+                if (withVideo)
+                {
+                    ZipArchiveEntry videoEntry = archive.CreateEntry(videoResource.FileName);
+                    using (MemoryStream videoBody = new MemoryStream(this.GetDataFromResource(videoResource)))
+                    using (Stream aus = videoEntry.Open())
+                    {
+                        videoBody.CopyTo(aus);
+                    }
+                }
+            }
+
+            return memStream.ToArray();
+        }
+    }
+
     public string INIToELYR(string iniText)
     {
+        this.error = null;
         Dictionary<string[], int[]> TWords = this.parseTextFromINI(iniText);
         if (TWords == null) { return null; }
         string[] words = TWords.First().Key;
@@ -347,6 +485,7 @@ public class KFN
 
     public string INIToExtLRC(string iniText)
     {
+        this.error = null;
         Dictionary<string[], int[]> TWords = this.parseTextFromINI(iniText);
         if (TWords == null) { return null; }
         string[] words = TWords.First().Key;
@@ -398,6 +537,7 @@ public class KFN
 
     private Dictionary<string[], int[]> parseTextFromINI(string iniBlock)
     {
+        this.error = null;
         Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
         Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
         string[] words = { };
@@ -445,12 +585,18 @@ public class KFN
         return TWords;
     }
 
-    public string GetAudioSource()
+    public string GetAudioSourceName()
     {
         if (this.properties.Count == 0) { return null; }
         //1,I,ddt_-_chto_takoe_osen'.mp3
         KeyValuePair<string, string> sourceProp = this.properties.Where(kv => kv.Key == "Source").FirstOrDefault();
         return sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last();
+    }
+
+    public ResorceFile GetVideoResource()
+    {
+        // kfn must contain only one video resource (karafun studio limit)
+        return this.resources.Where(r => r.FileType == "Video").FirstOrDefault();
     }
 
     public byte[] GetDataFromResource(ResorceFile resource)
