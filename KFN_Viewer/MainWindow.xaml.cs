@@ -6,12 +6,8 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Controls;
 using System.IO;
-//using System.Security.Cryptography;
-using System.Text.RegularExpressions;
-using System.IO.Compression;
 
 using Mozilla.NUniversalCharDet;
-//using IniParser.Model;
 
 namespace KFN_Viewer
 {
@@ -19,13 +15,8 @@ namespace KFN_Viewer
     {
         private readonly OpenFileDialog OpenFileDialog = new OpenFileDialog();
         private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
-        //private string KFNFile;
         private KFN KFN;
-        //private List<KFN.ResorceFile> resources = new List<KFN.ResorceFile>();
-        //private Dictionary<string, string> properties = new Dictionary<string, string>();
-        //private long endOfHeaderOffset;
 
-        //private int filesEncodingAuto = 20127;
         private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
         { { 0, "Use auto detect" } };
 
@@ -48,9 +39,9 @@ namespace KFN_Viewer
             OpenFileDialog.Filter = "KFN files (*.kfn)|*.kfn|All files (*.*)|*.*";
 
             ResourceViewInit();
-            
 #if !DEBUG
             testButton.Visibility = Visibility.Hidden;               
+            ExportAllButton.Visibility = Visibility.Hidden;
 #endif
         }
 
@@ -105,66 +96,13 @@ namespace KFN_Viewer
                 System.Windows.Controls.MenuItem viewItem = new System.Windows.Controls.MenuItem() { Header = "View" };
                 viewItem.Click += ViewResourceButtonClick;
                 rvcontext.Items.Add(viewItem);
-
-                //if (resource.FileType == "Lyrics")
-                //{
-                //    System.Windows.Controls.MenuItem toLRCItem = new System.Windows.Controls.MenuItem() { Header = "View as Extended LRC" };
-                //    toLRCItem.Click += ExportToLrcButtonClick;
-                //    rvcontext.Items.Add(toLRCItem);
-                //    System.Windows.Controls.MenuItem toELYRItem = new System.Windows.Controls.MenuItem() { Header = "View as ELYR" };
-                //    toELYRItem.Click += ExportToElyrButtonClick;
-                //    rvcontext.Items.Add(toELYRItem);
-                //}
             }
         }
-
-        //private void CreateEMZButtonClick(object sender, RoutedEventArgs e)
-        //{
-        //    FileInfo kfnFile = new FileInfo(KFN.FileName);
-        //    string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
-
-        //    FolderBrowserDialog.SelectedPath = kfnFile.DirectoryName;
-        //    if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-        //    {
-        //        string exportFolder = FolderBrowserDialog.SelectedPath;
-        //        try
-        //        {
-        //            System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
-        //        }
-        //        catch (UnauthorizedAccessException error)
-        //        {
-        //            System.Windows.MessageBox.Show(error.Message);
-        //            return;
-        //        }
-
-        //        byte[] emz = CreateEMZ();
-        //        if (emz != null)
-        //        {
-        //            ExportTextToFile(emzFileName, emz, exportFolder);
-        //            System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
-        //        }
-        //        else
-        //        {
-        //            System.Windows.MessageBox.Show("Failed to create EMZ");
-        //        }
-        //    }
-        //}
-        
-        //private string GetAudioSource()
-        //{
-        //    if (KFN.Properties.Count == 0) { return null; }
-        //    //1,I,ddt_-_chto_takoe_osen'.mp3
-        //    KeyValuePair<string, string> sourceProp = KFN.Properties.Where(kv => kv.Key == "Source").FirstOrDefault();
-        //    return sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last();
-        //}
         
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
         {
             if (OpenFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                //KFNFile = OpenFileDialog.FileName;
-                //filesEncodingAuto = 20127;
-                //ReadFile();
                 KFN = new KFN(OpenFileDialog.FileName);
                 if (KFN.isError != null)
                 {
@@ -177,31 +115,17 @@ namespace KFN_Viewer
 
         private void UpdateKFN()
         {
-            //propertiesView.ItemsSource = null;
-            //properties.Clear();
-            //resourcesView.ItemsSource = null;
-            //resources.Clear();
-            //ToEMZButton.IsEnabled = false;
             fileNameLabel.Content = "KFN file: " + KFN.FileName;
             propertiesView.ItemsSource = KFN.Properties;
             PropertyWindow.Text = string.Join("\n", KFN.UnknownProperties);
             AutoDetectedEncLabel.Content = KFN.AutoDetectEncoding;
 
-            //endOfHeaderOffset = fs.Position;
             resourcesView.ItemsSource = KFN.Resources;
             resourcesView.Items.Refresh();
             AutoSizeColumns(resourcesView.View as GridView);
 
             FilesEncodingElement.IsEnabled = true;
             if (KFN.Resources.Count > 1) { ExportAllButton.IsEnabled = true; }
-
-            //string sourceName = GetAudioSource();
-            //if (sourceName != null)
-            //{
-            //    KFN.ResorceFile audioResource = resources.Where(r => r.FileName == sourceName).FirstOrDefault();
-            //    KFN.ResorceFile lyricResource = resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-            //    if (audioResource != null && lyricResource != null) { ToEMZButton.IsEnabled = true; }
-            //}
         }
 
         private void FilesEncodingElement_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -291,124 +215,6 @@ namespace KFN_Viewer
             //    System.Windows.MessageBox.Show("Export OK: " + exportFolder);
             //}
         }
-
-        public void ExportToLrcButtonClick(object sender, RoutedEventArgs e)
-        {
-            //KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
-
-            //byte[] data = KFN.GetDataFromResource(resource);
-
-            //string textStrings = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
-            //if (textStrings == null) { return; }
-
-            //Window viewWindow = new ViewWindow(
-            //    resource.FileName,
-            //    textStrings,
-            //    Encoding.GetEncodings().Where(en => en.CodePage == 65001).First().DisplayName
-            //);
-            //viewWindow.Show();
-        }
-
-        //public void ExportToElyrButtonClick(object sender, RoutedEventArgs e)
-        //{
-        //    KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
-
-        //    byte[] data = KFN.GetDataFromResource(resource);
-
-        //    string textStrings = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
-        //    if (textStrings == null) { return; }
-
-        //    Window viewWindow = new ViewWindow(
-        //        resource.FileName,
-        //        textStrings,
-        //        Encoding.GetEncodings().Where(en => en.CodePage == 65001).First().DisplayName
-        //    );
-        //    viewWindow.Show();
-        //}
-        
-        //private string INIToExtLRC(string iniText)
-        //{
-        //    //FileIniDataParser parser = new FileIniDataParser();
-        //    var parser = new IniParser.Parser.IniDataParser();
-        //    IniData iniData = parser.Parse(iniText);
-        //    //using (StreamReader ini = new StreamReader())
-
-        //    Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
-        //    Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
-        //    string[] words = { };
-        //    int[] timings = { };
-        //    int lines = 0;
-        //    // remove double spaces
-        //    iniText = iniText.Replace("  ", " ");
-        //    foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
-        //    {
-        //        Match texts = textRegex.Match(str);
-        //        Match syncs = syncRegex.Match(str);
-        //        if (texts.Groups.Count > 1)
-        //        {
-        //            string textLine = texts.Groups[1].Value;
-        //            textLine = textLine.Replace(" ", " /");
-        //            string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
-        //            // + end of line
-        //            Array.Resize(ref words, words.Length + linewords.Length + 1);
-        //            Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
-        //            lines++;
-        //        }
-        //        else if (syncs.Groups.Count > 1)
-        //        {
-        //            string songLine = syncs.Groups[1].Value;
-        //            int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-        //                .Select(s => int.Parse(s)).ToArray();
-        //            Array.Resize(ref timings, timings.Length + linetimes.Length);
-        //            Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
-        //        }
-        //    }
-
-        //    if (timings.Length < words.Length - lines)
-        //    {
-        //        System.Windows.MessageBox.Show("Fail convert: words - " + words.Length + ", timings - " + timings.Length);
-        //        return null;
-        //    }
-
-        //    string lrcText = "";
-        //    if (words.Length == 0) { return null; }
-        //    bool newLine = true;
-        //    int timeIndex = 0;
-        //    for (int i = 0; i < words.Length; i++)
-        //    {
-        //        string startTag = (newLine) ? "[" : "<";
-        //        string endTag = (newLine) ? "]" : ">";
-                
-        //        // in end of line: +45 msec
-        //        int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
-        //        decimal time = Convert.ToDecimal(timing);
-        //        decimal min = Math.Truncate(time / 6000);
-        //        decimal sec = Math.Truncate((time - min * 6000) / 100);
-        //        decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
-
-        //        lrcText += startTag + String.Format("{0:D2}", (int)min) + ":"
-        //                + String.Format("{0:D2}", (int)sec) + "."
-        //                + String.Format("{0:D2}", (int)msec) + endTag;
-
-        //        if (words[i] != null)
-        //        {
-        //            lrcText += words[i];
-        //            newLine = false;
-        //            timeIndex++;
-        //        }
-        //        else
-        //        {
-        //            lrcText += "\n";
-        //            newLine = true;
-        //        }                
-        //    }
-        //    KeyValuePair<string, string> artistProp = KFN.Properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
-        //    KeyValuePair<string, string> titleProp = KFN.Properties.Where(kv => kv.Key == "Title").FirstOrDefault();
-        //    if (titleProp.Value != null) { lrcText = "[ti:" + titleProp.Value + "]\n" + lrcText; }
-        //    if (artistProp.Value != null) { lrcText = "[ar:" + artistProp.Value + "]\n" + lrcText; }
-
-        //    return lrcText;
-        //}
 
         public void ViewResourceButtonClick(object sender, RoutedEventArgs e)
         {
@@ -515,42 +321,6 @@ namespace KFN_Viewer
             }
         }
 
-        //private byte[] GetDataFromResource(KFN.ResorceFile resource)
-        //{
-        //    byte[] data = new byte[resource.FileLength];
-        //    using (FileStream fs = new FileStream(KFN.FileName, FileMode.Open, FileAccess.Read))
-        //    {
-        //        //fs.Position = endOfHeaderOffset + resource.FileOffset;
-        //        fs.Read(data, 0, data.Length);
-        //    }
-
-        //    if (resource.IsEncrypted)
-        //    {
-        //        byte[] Key = Enumerable.Range(0, KFN.Properties["AES-ECB-128 Key"].Length)
-        //            .Where(x => x % 2 == 0)
-        //            .Select(x => Convert.ToByte(KFN.Properties["AES-ECB-128 Key"].Substring(x, 2), 16))
-        //            .ToArray();
-        //        data = DecryptData(data, Key);
-        //    }
-        //    return data;
-        //}
-
-        //private byte[] DecryptData(byte[] data, byte[] Key)
-        //{
-        //    RijndaelManaged aes = new RijndaelManaged
-        //    {
-        //        KeySize = 128,
-        //        Padding = PaddingMode.None,
-        //        Mode = CipherMode.ECB
-        //    };
-        //    using (ICryptoTransform decrypt = aes.CreateDecryptor(Key, null))
-        //    {
-        //        byte[] dest = decrypt.TransformFinalBlock(data, 0, data.Length);
-        //        decrypt.Dispose();
-        //        return dest;
-        //    }
-        //}
-
         // TODO (maybe)
         private void Test(object sender, RoutedEventArgs e)
         {
@@ -570,52 +340,4 @@ namespace KFN_Viewer
         //https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/how-to-create-outlined-text
         //https://ru.stackoverflow.com/questions/630777/%D0%97%D0%B0%D0%BA%D1%80%D0%B0%D1%81%D0%B8%D1%82%D1%8C-%D1%82%D0%B5%D0%BA%D1%81%D1%82-%D1%81%D0%BB%D0%BE%D0%B2%D0%BE-%D0%B1%D1%83%D0%BA%D0%B2%D1%83
     }
-
-    //public class ViewCellTemplateSelector : DataTemplateSelector
-    //{
-    //    private DataTemplate t1;
-
-    //    public ViewCellTemplateSelector(DataTemplate template1)
-    //    {
-    //        this.t1 = template1;
-    //    }
-
-    //    public override DataTemplate SelectTemplate(object item, DependencyObject container)
-    //    {
-    //        KFN.ResorceFile resource = (item as KFN.ResorceFile);
-    //        if (resource.FileType == "Text" || resource.FileType == "Lyrics" || resource.FileType == "Image")
-    //        {
-    //            return this.t1;
-    //        }
-
-    //        DataTemplate viewColumnEmptyTemplate = new DataTemplate();
-    //        FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
-    //        viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
-    //        return viewColumnEmptyTemplate;
-    //    }
-    //}
-
-    //public class LyricCellTemplateSelector : DataTemplateSelector
-    //{
-    //    private DataTemplate t1;
-
-    //    public LyricCellTemplateSelector(DataTemplate template1)
-    //    {
-    //        this.t1 = template1;
-    //    }
-
-    //    public override DataTemplate SelectTemplate(object item, DependencyObject container)
-    //    {
-    //        KFN.ResorceFile resource = (item as KFN.ResorceFile);
-    //        if (resource.FileType == "Lyrics")
-    //        {
-    //            return this.t1;
-    //        }
-
-    //        DataTemplate viewColumnEmptyTemplate = new DataTemplate();
-    //        FrameworkElementFactory viewButtonEmptyFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBox));
-    //        viewColumnEmptyTemplate.VisualTree = viewButtonEmptyFactory;
-    //        return viewColumnEmptyTemplate;
-    //    }
-    //}
 }

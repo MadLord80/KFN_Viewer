@@ -2,13 +2,11 @@
 using System.Windows;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 using IniParser.Model;
 using System.Collections.Generic;
 using System.Windows.Controls;
 using System.IO;
-using System.IO.Compression;
 using System.Windows.Forms;
 
 namespace KFN_Viewer
@@ -134,29 +132,6 @@ namespace KFN_Viewer
 
         private void createEMZ(bool withVideo = false)
         {
-            //string audioFile = this.KFN.GetAudioSourceName();
-            //if (audioFile == null)
-            //{
-            //    System.Windows.MessageBox.Show("Can`t find audio source property!");
-            //    return;
-            //}
-            //KFN.ResorceFile audioResource = this.KFN.Resources.Where(r => r.FileName == audioFile).FirstOrDefault();
-            //if (audioResource == null)
-            //{
-            //    System.Windows.MessageBox.Show("Can`t find resource for audio source property!");
-            //    return;
-            //}
-
-            //KFN.ResorceFile lyricResource = this.KFN.Resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-            //if (lyricResource == null)
-            //{
-            //    System.Windows.MessageBox.Show("Can`t find Song.ini!");
-            //    return;
-            //}
-
-            //FileInfo sourceFile = new FileInfo(audioFile);
-            //string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
-
             BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
             byte[] emzData = KFN.createEMZ(block.Content, withVideo);
             if (emzData == null)
@@ -166,68 +141,28 @@ namespace KFN_Viewer
                     : "Fail to create EMZ!");
                 return;
             }
-            //string elyrText = this.KFN.INIToELYR(block.Content);
-            //if (elyrText == null)
-            //{
-            //    System.Windows.MessageBox.Show((KFN.isError != null)
-            //        ? KFN.isError
-            //        : "Fail to create ELYR!");
-            //    return;
-            //}
 
-            //byte[] bom = Encoding.Unicode.GetPreamble();
-            //string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
-            //byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.Unicode, Encoding.UTF8.GetBytes(elyrHeader + elyrText));
-            //Array.Resize(ref bom, bom.Length + elyr.Length);
-            //Array.Copy(elyr, 0, bom, 2, elyr.Length);
+            FileInfo kfnFile = new FileInfo(KFN.FileName);
+            string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
+            if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string exportFolder = FolderBrowserDialog.SelectedPath;
+                try
+                {
+                    System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
+                }
+                catch (UnauthorizedAccessException error)
+                {
+                    System.Windows.MessageBox.Show(error.Message);
+                    return;
+                }
 
-            //using (MemoryStream memStream = new MemoryStream())
-            //{
-            //    //int cp = System.Globalization.CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
-            //    int cp = 866;
-            //    using (ZipArchive archive = new ZipArchive(memStream, ZipArchiveMode.Create, true, Encoding.GetEncoding(cp)))
-            //    {
-            //        ZipArchiveEntry lyricEntry = archive.CreateEntry(elyrFileName);
-            //        using (MemoryStream lyricBody = new MemoryStream(bom))
-            //        using (Stream ls = lyricEntry.Open())
-            //        {
-            //            lyricBody.CopyTo(ls);
-            //        }
-
-            //        ZipArchiveEntry audioEntry = archive.CreateEntry(audioResource.FileName);
-            //        using (MemoryStream audioBody = new MemoryStream(KFN.GetDataFromResource(audioResource)))
-            //        using (Stream aus = audioEntry.Open())
-            //        {
-            //            audioBody.CopyTo(aus);
-            //        }
-            //    }
-
-            //    byte[] emzData = memStream.ToArray();
-            //if (emzData != null)
-            //    {
-                    FileInfo kfnFile = new FileInfo(KFN.FileName);
-                    string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
-                    if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                    {
-                        string exportFolder = FolderBrowserDialog.SelectedPath;
-                        try
-                        {
-                            System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
-                        }
-                        catch (UnauthorizedAccessException error)
-                        {
-                            System.Windows.MessageBox.Show(error.Message);
-                            return;
-                        }
-
-                        using (FileStream fs = new FileStream(exportFolder + "\\" + emzFileName, FileMode.Create, FileAccess.Write))
-                        {
-                            fs.Write(emzData, 0, emzData.Length);
-                        }
-                        System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
-                    }
-                //}
-            //}
+                using (FileStream fs = new FileStream(exportFolder + "\\" + emzFileName, FileMode.Create, FileAccess.Write))
+                {
+                    fs.Write(emzData, 0, emzData.Length);
+                }
+                System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
+            }
         }
 
         private void ToLRCButton_Click(object sender, RoutedEventArgs e)

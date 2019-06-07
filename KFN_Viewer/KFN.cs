@@ -8,7 +8,6 @@ using System.IO.Compression;
 
 using Mozilla.NUniversalCharDet;
 using System.Text.RegularExpressions;
-//using IniParser.Model;
 
 public class KFN
 {
@@ -120,33 +119,6 @@ public class KFN
         if (iniBlockTypes.ContainsKey(id)) { return iniBlockTypes[id]; }
         return "Unknown [" + id + "]";
     }
-
-    //public class BlockInfo
-    //{
-    //    private string name;
-    //    private string id;
-    //    private string type;
-    //    private string content;
-
-    //    public string Name { get { return this.name; } }
-    //    public string Id { get { return this.id; } }
-    //    public string Type { get { return this.type; } }
-    //    public string Content { get { return this.content; } }
-
-    //    public BlockInfo(SectionData block, string KFNBlockType)
-    //    {
-    //        this.name = block.SectionName;
-    //        this.id = block.Keys["ID"];
-    //        this.type = KFNBlockType;
-
-    //        string blockContent = "";
-    //        foreach (KeyData key in block.Keys)
-    //        {
-    //            blockContent += key.KeyName + "=" + key.Value + "\n";
-    //        }
-    //        this.content = blockContent;
-    //    }
-    //}
 
     public class ResorceFile
     {
@@ -334,31 +306,6 @@ public class KFN
         }
     }
 
-    //private void ParseINI()
-    //{
-    //    var parser = new IniParser.Parser.IniDataParser();
-    //    ResorceFile resource = this.Resources.Where(r => r.FileName == "Song.ini").First();
-    //    byte[] data = this.GetDataFromResource(resource);
-    //    // skip null at the end
-    //    data = data.Reverse().SkipWhile(d => d == 0).ToArray().Reverse().ToArray();
-    //    string iniText = new string(Encoding.UTF8.GetChars(data));
-
-    //    IniData iniData = parser.Parse(iniText);
-
-    //    List<BlockInfo> blocksData = new List<BlockInfo>();
-    //    foreach (SectionData block in iniData.Sections)
-    //    {
-    //        string blockId = block.Keys["ID"];
-    //        blocksData.Add(new BlockInfo(
-    //            block,
-    //            (blockId != null) ? this.GetIniBlockType(Convert.ToInt32(blockId)) : ""
-    //        ));
-    //    }
-
-    //    //iniBlocksView.ItemsSource = blocksData;
-    //    //this.AutoSizeColumns(iniBlocksView.View as GridView);
-    //}
-
     public byte[] createEMZ(string iniText, bool withVideo = false)
     {
         this.error = null;
@@ -392,8 +339,6 @@ public class KFN
         FileInfo sourceFile = new FileInfo(audioFile);
         string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
 
-        //BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
-        //string elyrText = this.KFN.INIToELYR(block.Content);
         string elyrText = this.INIToELYR(iniText);
         if (elyrText == null)
         {
@@ -575,13 +520,8 @@ public class KFN
             return null;
         }
 
-        //Dictionary<string, int> TWords = new Dictionary<string, int>();
         Dictionary<string[], int[]> TWords = new Dictionary<string[], int[]>();
-        //var ttt = new { words, timings };
-        //for (int i = 0; i < words.Length; i++)
-        //{
-            TWords.Add(words, timings);
-        //}
+        TWords.Add(words, timings);
         return TWords;
     }
 
