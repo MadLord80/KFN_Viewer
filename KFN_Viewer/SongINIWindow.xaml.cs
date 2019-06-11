@@ -88,9 +88,7 @@ namespace KFN_Viewer
         {
             var parser = new IniParser.Parser.IniDataParser();
             KFN.ResorceFile resource = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
-            byte[] data = KFN.GetDataFromResource(resource);
-            // skip null at the end
-            data = data.Reverse().SkipWhile(d => d == 0).ToArray().Reverse().ToArray();
+            byte[] data = KFN.GetDataFromResource(resource);            
             string iniText = new string(Encoding.UTF8.GetChars(data));
 
             IniData iniData = parser.Parse(iniText);

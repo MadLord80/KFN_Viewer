@@ -124,6 +124,7 @@ public class KFN
     {
         private string Type;
         private string Name;
+        private int EncryptedLength;
         private int Length;
         private int Offset;
         private bool Encrypted;
@@ -136,10 +137,15 @@ public class KFN
         {
             get { return this.Name; }
         }
+        public int EncLength
+        {
+            get { return this.EncryptedLength; }
+            //set { this.Length = value; }
+        }
         public int FileLength
         {
             get { return this.Length; }
-            set { this.Length = value; }
+            //set { this.Length = value; }
         }
         public int FileOffset
         {
@@ -150,10 +156,11 @@ public class KFN
             get { return this.Encrypted; }
         }
 
-        public ResorceFile(string type, string name, int length, int offset, bool encrypted)
+        public ResorceFile(string type, string name, int enclength, int length, int offset, bool encrypted)
         {
             this.Type = type;
             this.Name = name;
+            this.EncryptedLength = enclength;
             this.Length = length;
             this.Offset = offset;
             this.Encrypted = encrypted;
@@ -296,6 +303,7 @@ public class KFN
                     this.GetFileType(resourceType),
                     fName,
                     BitConverter.ToInt32(resourceEncryptedLenght, 0),
+                    BitConverter.ToInt32(resourceLenght, 0),
                     BitConverter.ToInt32(resourceOffset, 0),
                     (encrypted == 0) ? false : true
                 ));
@@ -541,7 +549,7 @@ public class KFN
 
     public byte[] GetDataFromResource(ResorceFile resource)
     {
-        byte[] data = new byte[resource.FileLength];
+        byte[] data = new byte[resource.EncLength];
         using (FileStream fs = new FileStream(this.fileName, FileMode.Open, FileAccess.Read))
         {
             fs.Position = this.endOfHeaderOffset + resource.FileOffset;
@@ -555,6 +563,8 @@ public class KFN
                 .Select(x => Convert.ToByte(this.properties["AES-ECB-128 Key"].Substring(x, 2), 16))
                 .ToArray();
             data = DecryptData(data, Key);
+            // delete end garbage
+            Array.Resize(ref data, resource.FileLength);
         }
         return data;
     }
