@@ -333,7 +333,7 @@ public class KFN
         ResorceFile videoResource = this.GetVideoResource();
         if (withVideo && videoResource == null)
         {
-            this.error = "Can`t find video resource!";
+            this.error = "Can`t find or KFN contain more one video resource!";
             return null;
         }
 
@@ -543,8 +543,9 @@ public class KFN
 
     public ResorceFile GetVideoResource()
     {
-        // kfn must contain only one video resource (karafun studio limit)
-        return this.resources.Where(r => r.FileType == "Video").FirstOrDefault();
+        // kfn may contain more then one video resource
+        ResorceFile[] videos = this.resources.Where(r => r.FileType == "Video").ToArray();
+        return (videos.Length == 1) ? videos[0] : null;
     }
 
     public byte[] GetDataFromResource(ResorceFile resource)

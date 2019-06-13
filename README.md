@@ -5,7 +5,8 @@ TODO:
 - [x] parse Song.ini as ini-file (multiple lyric)
 - [x] edit LRC and save
 - [x] export to EMZ w/ or w/o AVI
-- [ ] more then one video resource!
+- [x] more then one video resource!
+- [ ] select video for create EMZ
 - [ ] use edited ELYR in EMZ
 - [ ] buttons for create EMZ to main window (if possible)
 - [ ] add size of resource to view
