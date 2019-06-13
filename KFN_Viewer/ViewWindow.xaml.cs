@@ -1,18 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Forms;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace KFN_Viewer
 {
@@ -24,6 +15,11 @@ namespace KFN_Viewer
         private double[] textSizes = new double[] { 14, 16, 18, 20, 22, 24, 26, 28, 30 };
         private string fileName;
         private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
+
+        public string EditedText
+        {
+            get { return TextWindow.Text; }
+        }
 
         public ViewWindow(string fileName, string text, string encoding)
         {

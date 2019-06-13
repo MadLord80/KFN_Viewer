@@ -314,7 +314,7 @@ public class KFN
         }
     }
 
-    public byte[] createEMZ(string iniText, bool withVideo = false)
+    public byte[] createEMZ(string iniOrElyrText, bool withVideo = false)
     {
         this.error = null;
         string audioFile = this.GetAudioSourceName();
@@ -347,7 +347,7 @@ public class KFN
         FileInfo sourceFile = new FileInfo(audioFile);
         string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
 
-        string elyrText = this.INIToELYR(iniText);
+        string elyrText = this.INIToELYR(iniOrElyrText);
         if (elyrText == null)
         {
             if (this.error == null) { this.error = "Fail to create ELYR!"; }

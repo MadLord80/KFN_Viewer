@@ -184,7 +184,6 @@ namespace KFN_Viewer
             viewWindow.Show();
         }
 
-
         private void toELYRButton_Click(object sender, RoutedEventArgs e)
         {
             BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
@@ -198,12 +197,13 @@ namespace KFN_Viewer
                     : "Fail to create ELYR!");
                 return;
             }
-            Window viewWindow = new ViewWindow(
+            var viewWindow = new ViewWindow(
                 lrcFileName,
                 elyr,
                 "UTF-8"
             );
-            viewWindow.Show();
+            viewWindow.ShowDialog();
+            string editedText = viewWindow.EditedText;
         }
 
         private void AutoSizeColumns(GridView gv)
