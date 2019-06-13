@@ -20,7 +20,7 @@
         <ComboBox x:Name="FilesEncodingElement" HorizontalAlignment="Left" Margin="524,10,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="FilesEncodingElement_SelectionChanged"/>
         <Label x:Name="fileNameLabel" Content="" HorizontalAlignment="Left" Margin="10,54,0,0" VerticalAlignment="Top" Width="919" FontSize="18"/>
         <Label Content="Properties:" HorizontalAlignment="Left" Margin="10,93,0,0" VerticalAlignment="Top" Width="133" FontSize="14"/>
-        <Label Content="Resources:" HorizontalAlignment="Left" Margin="396,93,0,0" VerticalAlignment="Top" Width="133" FontSize="14"/>
+        <Label Content="Resources:" HorizontalAlignment="Left" Margin="396,93,0,0" VerticalAlignment="Top" Width="72" FontSize="14"/>
         <ListView x:Name="propertiesView" HorizontalAlignment="Left" Height="365" Margin="0,127,0,0" VerticalAlignment="Top" Width="374" Grid.RowSpan="2" Style="{StaticResource ListViewWithGridViewStyle}">
             <ListView.View>
                 <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}">
@@ -36,6 +36,9 @@
         <Label Content="Auto detect is:" HorizontalAlignment="Left" Margin="656,8,0,0" VerticalAlignment="Top" Width="91"/>
         <Label x:Name="AutoDetectedEncLabel" Content="" HorizontalAlignment="Left" Margin="747,8,0,0" VerticalAlignment="Top" Width="172"/>
         <Button x:Name="ExportAllButton" Content="Export all" HorizontalAlignment="Left" VerticalAlignment="Top" Width="96" Margin="823,97,0,0" IsEnabled="False" Click="ExportAllButton_Click"/>
+        <Button x:Name="viewConfigButton" Content="View config" HorizontalAlignment="Left" Margin="468,97,0,0" VerticalAlignment="Top" Width="75" Height="21"/>
+        <Button x:Name="createEMZButton" Content="Create EMZ w/o video" HorizontalAlignment="Left" Margin="548,97,0,0" VerticalAlignment="Top" Width="134" Height="21"/>
+        <Button x:Name="createEMZ2Button" Content="Create EMZ w/ video" HorizontalAlignment="Left" Margin="687,97,0,0" VerticalAlignment="Top" Width="133"/>
 
     </Grid>
 </Window>

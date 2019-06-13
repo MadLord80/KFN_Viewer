@@ -2,9 +2,6 @@
 using System.Windows;
 using System.Linq;
 using System.Text;
-
-using IniParser.Model;
-using System.Collections.Generic;
 using System.Windows.Controls;
 using System.IO;
 using System.Windows.Forms;
@@ -58,59 +55,21 @@ namespace KFN_Viewer
             this.ParseINI(KFN);
         }
 
-        private class BlockInfo
-        {
-            private string name;
-            private string id;
-            private string type;
-            private string content;
-
-            public string Name { get { return this.name; } }
-            public string Id { get { return this.id; } }
-            public string Type { get { return this.type; } }
-            public string Content { get { return this.content; } }
-
-            public BlockInfo(SectionData block, string KFNBlockType)
-            {
-                this.name = block.SectionName;
-                this.id = block.Keys["ID"];
-                this.type = KFNBlockType;
-
-                string blockContent = "";
-                foreach (KeyData key in block.Keys)
-                {
-                    blockContent += key.KeyName + "=" + key.Value + "\n";
-                }
-                this.content = blockContent;
-            }
-        }
-
         private void ParseINI(KFN KFN)
         {
-            var parser = new IniParser.Parser.IniDataParser();
             KFN.ResorceFile resource = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
             byte[] data = KFN.GetDataFromResource(resource);            
             string iniText = new string(Encoding.UTF8.GetChars(data));
 
-            IniData iniData = parser.Parse(iniText);
+            SongINI sINI = new SongINI(iniText);
 
-            List<BlockInfo> blocksData = new List<BlockInfo>();
-            foreach (SectionData block in iniData.Sections)
-            {
-                string blockId = block.Keys["ID"];
-                blocksData.Add(new BlockInfo(
-                    block,
-                    (blockId != null) ? KFN.GetIniBlockType(Convert.ToInt32(blockId)) : ""
-                ));
-            }
-
-            iniBlocksView.ItemsSource = blocksData;
+            iniBlocksView.ItemsSource = sINI.Blocks;
             this.AutoSizeColumns(iniBlocksView.View as GridView);
         }
 
         private void IniBlocksView_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
+            SongINI.BlockInfo block = iniBlocksView.SelectedItem as SongINI.BlockInfo;
             blockContent.Text = block.Content;
             toLRCButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
             toELYRButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
@@ -131,7 +90,7 @@ namespace KFN_Viewer
 
         private void createEMZ(bool withVideo = false)
         {
-            BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
+            SongINI.BlockInfo block = iniBlocksView.SelectedItem as SongINI.BlockInfo;
             byte[] emzData = KFN.createEMZ((this.editedText == null) ? block.Content : this.editedText, withVideo);
             if (emzData == null)
             {
@@ -166,7 +125,7 @@ namespace KFN_Viewer
 
         private void ToLRCButton_Click(object sender, RoutedEventArgs e)
         {
-            BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
+            SongINI.BlockInfo block = iniBlocksView.SelectedItem as SongINI.BlockInfo;
             FileInfo sourceFile = new FileInfo(KFN.GetAudioSourceName());
             string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
             string extLRC = KFN.INIToExtLRC(block.Content);
@@ -187,7 +146,7 @@ namespace KFN_Viewer
 
         private void toELYRButton_Click(object sender, RoutedEventArgs e)
         {
-            BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
+            SongINI.BlockInfo block = iniBlocksView.SelectedItem as SongINI.BlockInfo;
             FileInfo sourceFile = new FileInfo(KFN.GetAudioSourceName());
             string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
             string elyr = KFN.INIToELYR(block.Content);

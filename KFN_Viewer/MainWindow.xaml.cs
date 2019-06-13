@@ -38,6 +38,10 @@ namespace KFN_Viewer
 
             OpenFileDialog.Filter = "KFN files (*.kfn)|*.kfn|All files (*.*)|*.*";
 
+            viewConfigButton.Click += ViewConfigButtonClick;
+            viewConfigButton.IsEnabled = false;
+            createEMZ2Button.IsEnabled = false;
+            createEMZButton.IsEnabled = false;
             ResourceViewInit();
 #if !DEBUG
             testButton.Visibility = Visibility.Hidden;               
@@ -91,7 +95,7 @@ namespace KFN_Viewer
                 }
             }
 
-            if (resource.FileType == "Text" || resource.FileType == "Config" || resource.FileType == "Image")
+            if (resource.FileType == "Text" || resource.FileType == "Image")
             {
                 System.Windows.Controls.MenuItem viewItem = new System.Windows.Controls.MenuItem() { Header = "View" };
                 viewItem.Click += ViewResourceButtonClick;
@@ -103,6 +107,9 @@ namespace KFN_Viewer
         {
             if (OpenFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
+                viewConfigButton.IsEnabled = false;
+                createEMZButton.IsEnabled = false;
+                createEMZ2Button.IsEnabled = false;
                 KFN = new KFN(OpenFileDialog.FileName);
                 if (KFN.isError != null)
                 {
@@ -110,6 +117,19 @@ namespace KFN_Viewer
                     return;
                 }
                 this.UpdateKFN();
+                viewConfigButton.IsEnabled = true;
+
+                KFN.ResorceFile resource = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
+                byte[] data = KFN.GetDataFromResource(resource);
+                string iniText = new string(Encoding.UTF8.GetChars(data));
+                SongINI sINI = new SongINI(iniText);
+                int textBlocksCount = sINI.Blocks.Where(b => b.Id == "1" || b.Id == "2").ToArray().Length;
+                KFN.ResorceFile video = KFN.GetVideoResource();
+                if (textBlocksCount == 1)
+                {
+                    createEMZButton.IsEnabled = true;
+                    if (video != null) { createEMZ2Button.IsEnabled = true; }
+                }
             }
         }
 
@@ -216,6 +236,12 @@ namespace KFN_Viewer
             //}
         }
 
+        public void ViewConfigButtonClick(object sender, RoutedEventArgs e)
+        {
+            Window songINI = new SongINIWindow(KFN);
+            songINI.Show();
+        }
+
         public void ViewResourceButtonClick(object sender, RoutedEventArgs e)
         {
             KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
@@ -245,12 +271,7 @@ namespace KFN_Viewer
                     Encoding.GetEncodings().Where(en => en.CodePage == detEncoding).First().DisplayName
                 );
                 viewWindow.Show();
-            }
-            else if (resource.FileType == "Config")
-            {
-                Window songINI = new SongINIWindow(KFN);
-                songINI.Show();
-            }
+            }            
             else if (resource.FileType == "Image")
             {
                 byte[] data = KFN.GetDataFromResource(resource);

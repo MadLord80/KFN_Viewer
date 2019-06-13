@@ -56,14 +56,14 @@ public class KFN
         {5, "Video"},
         {6, "Visualization"}
     };
-    private Dictionary<int, string> iniBlockTypes = new Dictionary<int, string> {
-        {1, "Vertical text"},
-        {2, "Classic karaoke"},
-        {21, "Sprites"},
-        {62, "Video"},
-        {51, "Background"},
-        {53, "MilkDrop"}
-    };
+    //private Dictionary<int, string> iniBlockTypes = new Dictionary<int, string> {
+    //    {1, "Vertical text"},
+    //    {2, "Classic karaoke"},
+    //    {21, "Sprites"},
+    //    {62, "Video"},
+    //    {51, "Background"},
+    //    {53, "MilkDrop"}
+    //};
 
     public KFN(string fileName)
     {
@@ -114,11 +114,11 @@ public class KFN
         return "Unknown (" + ftype + ")";
     }
 
-    public string GetIniBlockType(int id)
-    {
-        if (iniBlockTypes.ContainsKey(id)) { return iniBlockTypes[id]; }
-        return "Unknown [" + id + "]";
-    }
+    //public string GetIniBlockType(int id)
+    //{
+    //    if (iniBlockTypes.ContainsKey(id)) { return iniBlockTypes[id]; }
+    //    return "Unknown [" + id + "]";
+    //}
 
     public class ResorceFile
     {
