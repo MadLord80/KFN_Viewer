@@ -347,7 +347,9 @@ public class KFN
         FileInfo sourceFile = new FileInfo(audioFile);
         string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
 
-        string elyrText = this.INIToELYR(iniOrElyrText);
+        string elyrText = (Regex.IsMatch(iniOrElyrText, @"^Sync[0-9]+=[0-9,]+"))
+            ? this.INIToELYR(iniOrElyrText)
+            : iniOrElyrText;
         if (elyrText == null)
         {
             if (this.error == null) { this.error = "Fail to create ELYR!"; }

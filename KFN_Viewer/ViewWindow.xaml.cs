@@ -15,23 +15,25 @@ namespace KFN_Viewer
         private double[] textSizes = new double[] { 14, 16, 18, 20, 22, 24, 26, 28, 30 };
         private string fileName;
         private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
+        private string origText = null;
 
         public string EditedText
         {
             get { return TextWindow.Text; }
         }
 
-        public ViewWindow(string fileName, string text, string encoding)
+        public ViewWindow(string fileName, string text, string encoding, string editedText = null)
         {
             InitializeComponent();
 
             this.fileName = fileName;
+            this.origText = text;
 
             ViewWindowElement.Title += this.fileName + " (" + encoding + ")";            
             textSizeBox.ItemsSource = textSizes;
             textSizeBox.SelectedIndex = 0;
             TextWindow.FontSize = textSizes[0];
-            TextWindow.Text = text;
+            TextWindow.Text = (editedText == null) ? text : editedText;
         }
 
         private void TextSizeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -61,6 +63,11 @@ namespace KFN_Viewer
                 }
                 System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + this.fileName);
             }
+        }
+
+        private void ResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            TextWindow.Text = this.origText;
         }
     }
 }

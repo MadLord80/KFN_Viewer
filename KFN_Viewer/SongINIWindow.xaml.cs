@@ -18,7 +18,8 @@ namespace KFN_Viewer
     {
         private KFN KFN;
         private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
-
+        private string editedText = null;
+        
         public SongINIWindow(KFN KFN)
         {
             InitializeComponent();
@@ -131,7 +132,7 @@ namespace KFN_Viewer
         private void createEMZ(bool withVideo = false)
         {
             BlockInfo block = iniBlocksView.SelectedItem as BlockInfo;
-            byte[] emzData = KFN.createEMZ(block.Content, withVideo);
+            byte[] emzData = KFN.createEMZ((this.editedText == null) ? block.Content : this.editedText, withVideo);
             if (emzData == null)
             {
                 System.Windows.MessageBox.Show((KFN.isError != null)
@@ -200,10 +201,11 @@ namespace KFN_Viewer
             var viewWindow = new ViewWindow(
                 lrcFileName,
                 elyr,
-                "UTF-8"
+                "UTF-8",
+                this.editedText
             );
             viewWindow.ShowDialog();
-            string editedText = viewWindow.EditedText;
+            this.editedText = viewWindow.EditedText;
         }
 
         private void AutoSizeColumns(GridView gv)

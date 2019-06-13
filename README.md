@@ -7,7 +7,7 @@ TODO:
 - [x] export to EMZ w/ or w/o AVI
 - [x] more then one video resource!
 - [ ] select video for create EMZ
-- [ ] use edited ELYR in EMZ
+- [x] use edited ELYR in EMZ
 - [ ] buttons for create EMZ to main window (if possible)
 - [ ] add size of resource to view
 - [ ] export to decrypted KFN only with lyric and audio

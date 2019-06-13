@@ -14,6 +14,7 @@
         <ComboBox x:Name="textSizeBox" HorizontalAlignment="Left" Margin="75,10,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="TextSizeBox_SelectionChanged"/>
         <Label Content="Text size:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
         <Button x:Name="saveButton" Content="Save" HorizontalAlignment="Left" Margin="243,10,0,0" VerticalAlignment="Top" Width="75" Click="saveButton_Click"/>
+        <Button x:Name="resetButton" Content="Reset" HorizontalAlignment="Left" Margin="323,10,0,0" VerticalAlignment="Top" Width="58" Click="ResetButton_Click"/>
         <!--</ScrollViewer>-->
     </Grid>
 </Window>
