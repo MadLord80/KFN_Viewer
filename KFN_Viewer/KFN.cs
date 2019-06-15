@@ -120,6 +120,28 @@ public class KFN
     //    return "Unknown [" + id + "]";
     //}
 
+    private class FileBytesAbstraction : TagLib.File.IFileAbstraction
+    {
+        public FileBytesAbstraction(string name, byte[] data)
+        {
+            Name = name;
+            var stream = new MemoryStream(data);
+            ReadStream = stream;
+            WriteStream = stream;
+        }
+
+        public void CloseStream(Stream stream)
+        {
+            stream.Dispose();
+        }
+
+        public string Name { get; private set; }
+
+        public Stream ReadStream { get; private set; }
+
+        public Stream WriteStream { get; private set; }
+    }
+
     public class ResorceFile
     {
         private string Type;
@@ -391,6 +413,9 @@ public class KFN
                 }
 
                 ZipArchiveEntry audioEntry = archive.CreateEntry(audioResource.FileName);
+
+                TagLib.File file = TagLib.File.Create(new FileBytesAbstraction(audioResource.FileName, this.GetDataFromResource(audioResource)));
+
                 using (MemoryStream audioBody = new MemoryStream(this.GetDataFromResource(audioResource)))
                 using (Stream aus = audioEntry.Open())
                 {
