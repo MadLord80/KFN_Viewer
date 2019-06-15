@@ -37,8 +37,8 @@
         <Label x:Name="AutoDetectedEncLabel" Content="" HorizontalAlignment="Left" Margin="747,8,0,0" VerticalAlignment="Top" Width="172"/>
         <Button x:Name="ExportAllButton" Content="Export all" HorizontalAlignment="Left" VerticalAlignment="Top" Width="96" Margin="823,97,0,0" IsEnabled="False" Click="ExportAllButton_Click"/>
         <Button x:Name="viewConfigButton" Content="View config" HorizontalAlignment="Left" Margin="468,97,0,0" VerticalAlignment="Top" Width="75" Height="21"/>
-        <Button x:Name="createEMZButton" Content="Create EMZ w/o video" HorizontalAlignment="Left" Margin="548,97,0,0" VerticalAlignment="Top" Width="134" Height="21"/>
-        <Button x:Name="createEMZ2Button" Content="Create EMZ w/ video" HorizontalAlignment="Left" Margin="687,97,0,0" VerticalAlignment="Top" Width="133"/>
+        <Button x:Name="createEMZButton" Content="Create EMZ w/o video" HorizontalAlignment="Left" Margin="548,97,0,0" VerticalAlignment="Top" Width="134" Height="21" Click="createEMZButton_Click"/>
+        <Button x:Name="createEMZ2Button" Content="Create EMZ w/ video" HorizontalAlignment="Left" Margin="687,97,0,0" VerticalAlignment="Top" Width="133" Click="createEMZ2Button_Click"/>
 
     </Grid>
 </Window>

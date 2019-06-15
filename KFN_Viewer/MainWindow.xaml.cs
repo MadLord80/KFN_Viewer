@@ -16,6 +16,7 @@ namespace KFN_Viewer
         private readonly OpenFileDialog OpenFileDialog = new OpenFileDialog();
         private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
         private KFN KFN;
+        private SongINI sINI;
 
         private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
         { { 0, "Use auto detect" } };
@@ -122,7 +123,7 @@ namespace KFN_Viewer
                 KFN.ResorceFile resource = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
                 byte[] data = KFN.GetDataFromResource(resource);
                 string iniText = new string(Encoding.UTF8.GetChars(data));
-                SongINI sINI = new SongINI(iniText);
+                sINI = new SongINI(iniText);
                 int textBlocksCount = sINI.Blocks.Where(b => b.Id == "1" || b.Id == "2").ToArray().Length;
                 KFN.ResorceFile video = KFN.GetVideoResource();
                 if (textBlocksCount == 1)
@@ -155,6 +156,52 @@ namespace KFN_Viewer
             {
                 KFN.ReadFile(selectedEncoding.Key);
                 this.UpdateKFN();
+            }
+        }
+
+        private void createEMZ2Button_Click(object sender, RoutedEventArgs e)
+        {
+            this.createEMZ(true);
+        }
+
+        private void createEMZButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.createEMZ();
+        }
+
+        private void createEMZ(bool withVideo = false)
+        {
+            SongINI.BlockInfo block = sINI.Blocks.Where(b => b.Id == "1" || b.Id == "2").First();
+            byte[] emzData = KFN.createEMZ(block.Content, withVideo);
+            if (emzData == null)
+            {
+                System.Windows.MessageBox.Show((KFN.isError != null)
+                    ? KFN.isError
+                    : "Fail to create EMZ!");
+                return;
+            }
+
+            FileInfo kfnFile = new FileInfo(KFN.FileName);
+            string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
+            FolderBrowserDialog.SelectedPath = kfnFile.DirectoryName;
+            if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string exportFolder = FolderBrowserDialog.SelectedPath;
+                try
+                {
+                    System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
+                }
+                catch (UnauthorizedAccessException error)
+                {
+                    System.Windows.MessageBox.Show(error.Message);
+                    return;
+                }
+
+                using (FileStream fs = new FileStream(exportFolder + "\\" + emzFileName, FileMode.Create, FileAccess.Write))
+                {
+                    fs.Write(emzData, 0, emzData.Length);
+                }
+                System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
             }
         }
 
