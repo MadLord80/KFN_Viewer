@@ -147,6 +147,21 @@ public class KFN
             get { return this.Length; }
             //set { this.Length = value; }
         }
+        public string FileSize
+        {
+            get
+            {
+                string[] Suffixes = { "b", "Kb", "Mb" };
+                int i = 0;
+                decimal dVal = (decimal)this.Length;
+                while (Math.Round(dVal, 1) >= 1000)
+                {
+                    dVal /= 1024;
+                    i++;
+                }
+                return String.Format("{0:n" + 1 + "} {1}", dVal, Suffixes[i]);
+            }
+        }
         public int FileOffset
         {
             get { return this.Offset; }

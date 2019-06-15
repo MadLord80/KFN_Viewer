@@ -9,7 +9,7 @@ TODO:
 - [ ] select video for create EMZ
 - [x] use edited ELYR in EMZ
 - [x] buttons for create EMZ to main window (if possible)
-- [ ] add size of resource to view
+- [x] add size of resource to view
 - [ ] export to decrypted KFN only with lyric and audio
 - [ ] export to decrypted KFN with resources by choice
 - [ ] delete ID3 lyric (USLT and SYLT)

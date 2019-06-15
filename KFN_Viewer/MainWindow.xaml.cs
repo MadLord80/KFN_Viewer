@@ -73,6 +73,11 @@ namespace KFN_Viewer
                 Header = "Name",
                 DisplayMemberBinding = new System.Windows.Data.Binding("FileName")
             });
+            resourceGrid.Columns.Add(new GridViewColumn()
+            {
+                Header = "Size",
+                DisplayMemberBinding = new System.Windows.Data.Binding("FileSize")
+            });
 
             resourcesView.View = resourceGrid;
 
