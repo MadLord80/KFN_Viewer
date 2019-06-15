@@ -157,7 +157,7 @@ namespace KFN_Viewer
                     : "Fail to create ELYR!");
                 return;
             }
-            var viewWindow = new ViewWindow(
+            ViewWindow viewWindow = new ViewWindow(
                 lrcFileName,
                 elyr,
                 "UTF-8",
