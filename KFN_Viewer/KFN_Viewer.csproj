@@ -78,6 +78,7 @@
     <Compile Include="ParseINI\Parser\ConcatenateDuplicatedKeysIniDataParser.cs" />
     <Compile Include="ParseINI\Parser\IniDataParser.cs" />
     <Compile Include="ParseINI\StreamIniDataParser.cs" />
+    <Compile Include="Slogi.cs" />
     <Compile Include="SongINI.cs" />
     <Compile Include="SongINIWindow.xaml.cs">
       <DependentUpon>SongINIWindow.xaml</DependentUpon>
