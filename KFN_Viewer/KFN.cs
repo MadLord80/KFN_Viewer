@@ -413,10 +413,7 @@ public class KFN
                 }
 
                 ZipArchiveEntry audioEntry = archive.CreateEntry(audioResource.FileName);
-
-                //TagLib.File file = TagLib.File.Create(new FileBytesAbstraction(audioResource.FileName, this.GetDataFromResource(audioResource)));
-                //file.
-
+                
                 using (MemoryStream audioBody = new MemoryStream(this.GetDataFromResource(audioResource)))
                 using (Stream aus = audioEntry.Open())
                 {
