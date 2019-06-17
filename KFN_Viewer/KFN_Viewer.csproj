@@ -84,6 +84,11 @@
     <Compile Include="SongINIWindow.xaml.cs">
       <DependentUpon>SongINIWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="TagLib\Ape\File.cs" />
+    <Compile Include="TagLib\Ape\Footer.cs" />
+    <Compile Include="TagLib\Ape\Item.cs" />
+    <Compile Include="TagLib\Ape\StreamHeader.cs" />
+    <Compile Include="TagLib\Ape\Tag.cs" />
     <Compile Include="TagLib\ByteVector.cs" />
     <Compile Include="TagLib\ByteVectorList.cs" />
     <Compile Include="TagLib\CombinedTag.cs" />
@@ -119,8 +124,28 @@
     <Compile Include="TagLib\Id3v2\SynchData.cs" />
     <Compile Include="TagLib\Id3v2\Tag.cs" />
     <Compile Include="TagLib\ListBase.cs" />
+    <Compile Include="TagLib\Mpeg\AudioFile.cs" />
+    <Compile Include="TagLib\Mpeg\AudioHeader.cs" />
+    <Compile Include="TagLib\Mpeg\File.cs" />
+    <Compile Include="TagLib\Mpeg\VBRIHeader.cs" />
+    <Compile Include="TagLib\Mpeg\VideoHeader.cs" />
+    <Compile Include="TagLib\Mpeg\XingHeader.cs" />
+    <Compile Include="TagLib\NonContainer\EndTag.cs" />
+    <Compile Include="TagLib\NonContainer\File.cs" />
+    <Compile Include="TagLib\NonContainer\StartTag.cs" />
+    <Compile Include="TagLib\NonContainer\Tag.cs" />
     <Compile Include="TagLib\Properties.cs" />
     <Compile Include="TagLib\ReadOnlyByteVector.cs" />
+    <Compile Include="TagLib\Riff\AviHeaderList.cs" />
+    <Compile Include="TagLib\Riff\AviStream.cs" />
+    <Compile Include="TagLib\Riff\BitmapInfoHeader.cs" />
+    <Compile Include="TagLib\Riff\DivXTag.cs" />
+    <Compile Include="TagLib\Riff\File.cs" />
+    <Compile Include="TagLib\Riff\InfoTag.cs" />
+    <Compile Include="TagLib\Riff\List.cs" />
+    <Compile Include="TagLib\Riff\ListTag.cs" />
+    <Compile Include="TagLib\Riff\MovieIdTag.cs" />
+    <Compile Include="TagLib\Riff\WaveFormatEx.cs" />
     <Compile Include="TagLib\StringList.cs" />
     <Compile Include="TagLib\SupportedMimeType.cs" />
     <Compile Include="TagLib\Tag.cs" />
