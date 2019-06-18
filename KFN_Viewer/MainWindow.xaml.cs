@@ -15,6 +15,7 @@ namespace KFN_Viewer
     {
         private readonly OpenFileDialog OpenFileDialog = new OpenFileDialog();
         private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
+        private string windowTitle = "KFN Viewer";
         private KFN KFN;
         private SongINI sINI;
 
@@ -26,7 +27,8 @@ namespace KFN_Viewer
             InitializeComponent();
 
             string version = System.Windows.Forms.Application.ProductVersion;
-            MainWindowElement.Title += " v." + version.Remove(version.Length - 2);
+            this.windowTitle += " v." + version.Remove(version.Length - 2);
+            MainWindowElement.Title = this.windowTitle;
 
             foreach (EncodingInfo enc in Encoding.GetEncodings())
             {
@@ -41,8 +43,8 @@ namespace KFN_Viewer
 
             viewConfigButton.Click += ViewConfigButtonClick;
             viewConfigButton.IsEnabled = false;
-            createEMZ2Button.IsEnabled = false;
-            createEMZButton.IsEnabled = false;
+            //createEMZ2Button.IsEnabled = false;
+            //createEMZButton.IsEnabled = false;
             ResourceViewInit();
 #if !DEBUG
             testButton.Visibility = Visibility.Hidden;               
@@ -108,20 +110,22 @@ namespace KFN_Viewer
                 rvcontext.Items.Add(viewItem);
             }
         }
-        
-        private void OpenFileButton_Click(object sender, RoutedEventArgs e)
+
+        //private void OpenFileButton_Click(object sender, RoutedEventArgs e)
+        private void OpenKFNMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (OpenFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 viewConfigButton.IsEnabled = false;
-                createEMZButton.IsEnabled = false;
-                createEMZ2Button.IsEnabled = false;
+                //createEMZButton.IsEnabled = false;
+                //createEMZ2Button.IsEnabled = false;
                 KFN = new KFN(OpenFileDialog.FileName);
                 if (KFN.isError != null)
                 {
                     System.Windows.MessageBox.Show(KFN.isError);
                     return;
                 }
+                MainWindowElement.Title = this.windowTitle + " - " + KFN.FileName;
                 this.UpdateKFN();
                 viewConfigButton.IsEnabled = true;
 
@@ -133,17 +137,20 @@ namespace KFN_Viewer
                 KFN.ResorceFile video = KFN.GetVideoResource();
                 if (textBlocksCount == 1)
                 {
-                    createEMZButton.IsEnabled = true;
-                    if (video != null) { createEMZ2Button.IsEnabled = true; }
+                    //createEMZButton.IsEnabled = true;
+                    //if (video != null) { createEMZ2Button.IsEnabled = true; }
                 }
             }
         }
 
         private void UpdateKFN()
         {
-            fileNameLabel.Content = "KFN file: " + KFN.FileName;
             propertiesView.ItemsSource = KFN.Properties;
-            PropertyWindow.Text = string.Join("\n", KFN.UnknownProperties);
+            if (KFN.UnknownProperties.Count > 0)
+            {
+                System.Windows.MessageBox.Show("This KFN file has properties that programm don`t know." +
+                    "\nPlease send this file to madlord80@gmail.com for support");
+            }
             AutoDetectedEncLabel.Content = KFN.AutoDetectEncoding;
 
             resourcesView.ItemsSource = KFN.Resources;
@@ -151,7 +158,6 @@ namespace KFN_Viewer
             AutoSizeColumns(resourcesView.View as GridView);
 
             FilesEncodingElement.IsEnabled = true;
-            if (KFN.Resources.Count > 1) { ExportAllButton.IsEnabled = true; }
         }
 
         private void FilesEncodingElement_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -208,84 +214,6 @@ namespace KFN_Viewer
                 }
                 System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
             }
-        }
-
-        private void ExportAllButton_Click(object sender, RoutedEventArgs e)
-        {
-            //FileInfo kfnfile = new FileInfo(KFN.FileName);
-            //string KFNFileDir = kfnfile.DirectoryName;
-            //string KFNNameDir = kfnfile.Name.Substring(0, kfnfile.Name.Length - kfnfile.Extension.Length);
-            
-            //FolderBrowserDialog.SelectedPath = KFNFileDir;
-            //if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            //{
-            //    string exportFolder = FolderBrowserDialog.SelectedPath;
-            //    try
-            //    {
-            //        System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
-            //    }
-            //    catch (UnauthorizedAccessException error)
-            //    {
-            //        System.Windows.MessageBox.Show(error.Message);
-            //        return;
-            //    }
-
-            //    exportFolder += "\\" + KFNNameDir;
-            //    if (Directory.Exists(exportFolder)) { Directory.Delete(exportFolder, true); }
-            //    Directory.CreateDirectory(exportFolder);
-
-            //    string audioSource = GetAudioSource();
-            //    foreach (KFN.ResorceFile resource in KFN.Resorces)
-            //    {
-            //        ExportResourceToFile(resource, exportFolder);
-            //        if (resource.FileType == "Lyrics")
-            //        {
-            //            byte[] data = GetDataFromResource(resource);
-            //            // try to convert to Extended LRC and Elyr
-            //            string lrcText = INIToExtLRC(new string(Encoding.UTF8.GetChars(data)));
-            //            string elyrText = INIToELYR(new string(Encoding.UTF8.GetChars(data)));
-            //            if (lrcText != null)
-            //            {
-            //                string sourceName = (audioSource != null) ? audioSource : resource.FileName;
-            //                FileInfo sourceFile = new FileInfo(sourceName);
-            //                string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
-            //                string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
-
-            //                ExportTextToFile(
-            //                    lrcFileName, 
-            //                    Encoding.Convert(Encoding.UTF8, Encoding.GetEncoding(1251), Encoding.UTF8.GetBytes(lrcText)),
-            //                    exportFolder
-            //                );
-
-            //                byte[] bom = Encoding.Unicode.GetPreamble();
-            //                string elyrHeader = "encore.lg-karaoke.ru ver=02 crc=00000000 \r\n";
-            //                byte[] elyr = Encoding.Convert(Encoding.UTF8, Encoding.Unicode, Encoding.UTF8.GetBytes(elyrHeader + elyrText));
-            //                Array.Resize(ref bom, bom.Length + elyr.Length);
-            //                Array.Copy(elyr, 0, bom, 2, elyr.Length);
-            //                ExportTextToFile(elyrFileName, bom, exportFolder);
-            //            }
-            //        }
-            //    }
-
-            //    // create EMZ
-            //    if (audioSource != null)
-            //    {
-            //        KFN.ResorceFile audioResource = KFN.Resorces.Where(r => r.FileName == audioSource).FirstOrDefault();
-            //        KFN.ResorceFile lyricResource = KFN.Resorces.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-            //        if (audioResource != null && lyricResource != null)
-            //        {
-            //            byte[] emz = CreateEMZ();
-            //            if (emz != null)
-            //            {
-            //                FileInfo kfnFile = new FileInfo(KFN.FileName);
-            //                string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
-            //                ExportTextToFile(emzFileName, emz, exportFolder);
-            //            }
-            //        }
-            //    }
-
-            //    System.Windows.MessageBox.Show("Export OK: " + exportFolder);
-            //}
         }
 
         public void ViewConfigButtonClick(object sender, RoutedEventArgs e)
@@ -400,14 +328,6 @@ namespace KFN_Viewer
             //Window playerWindow = new PlayWindow("D:\\DJ Piligrim LIVE @ Disco MCLUB (Augsburg) - 20. Mai 2009.avi");
             //playerWindow.Show();
         }
-
-        private void TestButton_Click(object sender, RoutedEventArgs e)
-        {
-            //if (KFN == null) { return; }
-            //Window songINI = new SongINIWindow(KFN);
-            //songINI.Show();
-        }
-
 
         // karaore text
         //https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/how-to-create-outlined-text
