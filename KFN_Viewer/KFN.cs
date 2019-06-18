@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using System.IO.Compression;
 
 using Mozilla.NUniversalCharDet;
-using System.Text.RegularExpressions;
 
 public class KFN
 {
@@ -413,7 +413,7 @@ public class KFN
                 }
 
                 ZipArchiveEntry audioEntry = archive.CreateEntry(audioResource.FileName);
-                
+
                 using (MemoryStream audioBody = new MemoryStream(this.GetDataFromResource(audioResource)))
                 using (Stream aus = audioEntry.Open())
                 {
