@@ -35,7 +35,7 @@
             <Label Grid.Column="0" Grid.Row="2" Content="Properties:" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Width="133" FontSize="14"/>
         <Label Grid.Column="1" Grid.Row="2" Content="Resources:" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Width="72" FontSize="14"/>
         <Button Grid.Column="1" Grid.Row="2" x:Name="viewConfigButton" Content="View config" HorizontalAlignment="Right" Margin="0,3,0,0" VerticalAlignment="Top" Width="75" Height="21"/>
-        <ListView Grid.Column="0" Grid.Row="3" x:Name="propertiesView" Margin="0" Style="{StaticResource ListViewWithGridViewStyle}">
+        <ListView Grid.Column="0" Grid.Row="3" x:Name="propertiesView" Margin="0,0,2,0" Style="{StaticResource ListViewWithGridViewStyle}">
             <ListView.View>
                 <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}">
                     <GridViewColumn DisplayMemberBinding="{Binding Key}" Header="Name" Width="130"/>
@@ -43,18 +43,18 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <ListView Grid.Column="1" Grid.Row="3" x:Name="resourcesView" Margin="0" Style="{StaticResource ListViewWithGridViewStyle}"/>
+        <ListView Grid.Column="1" Grid.Row="3" x:Name="resourcesView" Margin="2,0,0,0" Style="{StaticResource ListViewWithGridViewStyle}"/>
         <Menu Height="30" Grid.ColumnSpan="2" Grid.Row="0" VerticalAlignment="Top">
             <MenuItem Header="File" Height="30" Width="55" FontSize="14">
                 <MenuItem x:Name="openKFNMenuItem" Header="Open KFN" HorizontalAlignment="Left" Height="25" Width="176" Margin="0,0,-41,0" Click="OpenKFNMenuItem_Click"/>
             </MenuItem>
             <MenuItem Header="Export" Height="30" Width="55" FontSize="14">
-                <MenuItem Header="To EMZ" HorizontalAlignment="Left" Height="25" Width="169" Margin="0,0,-34,0"/>
+                <MenuItem x:Name="toEMZMenu" Header="To EMZ" HorizontalAlignment="Left" Height="25" Width="169" Margin="0,0,-34,0" Click="toEMZMenu_Click"/>
                 <MenuItem Header="To MP3+LRC" Height="25" Margin="0,0,-31,0"/>
                 <MenuItem Header="To KFN" HorizontalAlignment="Left" Height="25" Width="161" Margin="0,0,-26,0"/>
             </MenuItem>
             <MenuItem Header="Tools" Height="30" Width="55" IsEnabled="False" FontSize="14"/>
-            <MenuItem x:Name="resEncMenuItem" Header="Resource encoding" Height="30" Width="118"/>
+            <MenuItem x:Name="resEncMenuItem" Header="Resource encoding" Height="30" Width="133" FontSize="14"/>
         </Menu>
 
     </Grid>
