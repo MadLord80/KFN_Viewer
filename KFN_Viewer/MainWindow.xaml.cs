@@ -34,10 +34,20 @@ namespace KFN_Viewer
             {
                 encodings.Add(enc.CodePage, enc.CodePage + ": " + enc.DisplayName);
             }
-            FilesEncodingElement.DisplayMemberPath = "Value";
-            FilesEncodingElement.ItemsSource = encodings;
-            FilesEncodingElement.SelectedIndex = 0;
-            FilesEncodingElement.IsEnabled = false;
+            //FilesEncodingElement.DisplayMemberPath = "Value";
+            //FilesEncodingElement.ItemsSource = encodings;
+            //FilesEncodingElement.SelectedIndex = 0;
+            //FilesEncodingElement.IsEnabled = false;
+            foreach (KeyValuePair<int,string> enc in encodings)
+            {
+                System.Windows.Controls.MenuItem mi = new System.Windows.Controls.MenuItem {
+                    Header = enc.Value, Tag = enc.Key, IsCheckable = true                  
+                };
+                mi.Click += resEncMenuItem_Select;
+                if (enc.Key == 0) { mi.IsChecked = true; }
+                resEncMenuItem.Items.Add(mi);
+            }
+            resEncMenuItem.IsEnabled = false;
 
             OpenFileDialog.Filter = "KFN files (*.kfn)|*.kfn|All files (*.*)|*.*";
 
@@ -50,6 +60,22 @@ namespace KFN_Viewer
             testButton.Visibility = Visibility.Hidden;               
             ExportAllButton.Visibility = Visibility.Hidden;
 #endif
+        }
+
+        private void resEncMenuItem_Select(object sender, RoutedEventArgs e)
+        {
+            int enc = Convert.ToInt32(((System.Windows.Controls.MenuItem)sender).Tag.ToString());
+            foreach (var item in resEncMenuItem.Items)
+            {
+                ((System.Windows.Controls.MenuItem)item).IsChecked = 
+                    (((System.Windows.Controls.MenuItem)item).Tag == ((System.Windows.Controls.MenuItem)sender).Tag)
+                    ? true : false;
+            }
+            if (KFN != null)
+            {
+                KFN.ReadFile(enc);
+                this.UpdateKFN();
+            }
         }
 
         private void ResourceViewInit()
@@ -157,18 +183,19 @@ namespace KFN_Viewer
             resourcesView.Items.Refresh();
             AutoSizeColumns(resourcesView.View as GridView);
 
-            FilesEncodingElement.IsEnabled = true;
+            resEncMenuItem.IsEnabled = true;
+            //FilesEncodingElement.IsEnabled = true;
         }
 
-        private void FilesEncodingElement_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            KeyValuePair<int, string> selectedEncoding = (KeyValuePair<int, string>)FilesEncodingElement.SelectedItem;
-            if (KFN != null)
-            {
-                KFN.ReadFile(selectedEncoding.Key);
-                this.UpdateKFN();
-            }
-        }
+        //private void FilesEncodingElement_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    KeyValuePair<int, string> selectedEncoding = (KeyValuePair<int, string>)FilesEncodingElement.SelectedItem;
+        //    if (KFN != null)
+        //    {
+        //        KFN.ReadFile(selectedEncoding.Key);
+        //        this.UpdateKFN();
+        //    }
+        //}
 
         private void createEMZ2Button_Click(object sender, RoutedEventArgs e)
         {
