@@ -20,8 +20,6 @@
         <TextBox x:Name="lyricPreview" HorizontalAlignment="Left" Height="231" Margin="454,50,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="328" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AcceptsReturn="True" AcceptsTab="True"/>
         <Label x:Name="artistLabel" Content="Artist: " HorizontalAlignment="Left" Margin="79,149,0,0" VerticalAlignment="Top"/>
         <Label x:Name="titleLabel" Content="Title: " HorizontalAlignment="Left" Margin="79,176,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="artistTextBox" HorizontalAlignment="Left" Height="23" Margin="131,153,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="286"/>
-        <TextBox x:Name="titleTextBox" HorizontalAlignment="Left" Height="23" Margin="131,180,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="286"/>
         <Button x:Name="exportButton" Content="Export" HorizontalAlignment="Left" Margin="342,224,0,0" VerticalAlignment="Top" Width="75"/>
         <CheckBox x:Name="deleteID3Tags" Content="Delete all ID3 tags" HorizontalAlignment="Left" Margin="10,59,0,0" VerticalAlignment="Top"/>
         <Button x:Name="playVideoButton" HorizontalAlignment="Left" Margin="422,59,0,0" VerticalAlignment="Top" Width="27" ToolTip="Play video">
@@ -30,6 +28,8 @@
         <Button x:Name="playAudioButton" HorizontalAlignment="Left" Margin="422,91,0,0" VerticalAlignment="Top" Width="27" ToolTip="Play audio">
             <Path Fill="DarkCyan" Data="M 1,1 L 12,7 1,13 Z"/>
         </Button>
+        <ComboBox x:Name="artistSelect" HorizontalAlignment="Left" Margin="126,155,0,0" VerticalAlignment="Top" Width="291" SelectionChanged="ArtistSelect_SelectionChanged"/>
+        <ComboBox x:Name="titleSelect" HorizontalAlignment="Left" Margin="126,182,0,0" VerticalAlignment="Top" Width="291" SelectionChanged="TitleSelect_SelectionChanged"/>
 
     </Grid>
 </Window>

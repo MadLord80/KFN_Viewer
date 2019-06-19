@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 
 using Mozilla.NUniversalCharDet;
@@ -28,8 +29,8 @@ namespace KFN_Viewer
             deleteID3Tags.Visibility = (exportType == "MP3+LRC") ? Visibility.Visible : Visibility.Hidden;
             artistLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
             titleLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
-            artistTextBox.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
-            titleTextBox.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            artistSelect.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            titleSelect.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
 
             // TODO
             playVideoButton.IsEnabled = false;
@@ -76,6 +77,31 @@ namespace KFN_Viewer
             lyricPreview.Text = ((KeyValuePair<string, string>)lyricSelect.SelectedItem).Value;
 
             // ARTIST-TITLE
+            if (exportType == "MP3+LRC")
+            {
+                List<string> artists = new List<string> { null };
+                List<string> titles = new List<string> { null };
+
+                KeyValuePair<string, string> kfnArtist = KFN.Properties.Where(p => p.Key == "Artist").FirstOrDefault();
+                if (kfnArtist.Value != null && kfnArtist.Value.Length > 0) { artists.Add(kfnArtist.Value); }
+                KeyValuePair<string, string> kfnTitle = KFN.Properties.Where(p => p.Key == "Title").FirstOrDefault();
+                if (kfnTitle.Value != null && kfnTitle.Value.Length > 0) { titles.Add(kfnTitle.Value); }
+
+                ID3Tags id3 = new ID3Tags();
+                foreach (KFN.ResourceFile resource in KFN.Resources.Where(r => r.FileType == "Audio"))
+                {
+                    string[] atFromID3 = id3.GetArtistAndTitle(KFN.GetDataFromResource(resource));
+                    if (atFromID3[0] != null) { artists.Add(atFromID3[0]); }
+                    if (atFromID3[1] != null) { titles.Add(atFromID3[1]); }
+                }
+                artists = artists.Distinct().ToList();
+                titles = titles.Distinct().ToList();
+
+                artistSelect.ItemsSource = artists;
+                artistSelect.SelectedIndex = 0;
+                titleSelect.ItemsSource = titles;
+                titleSelect.SelectedIndex = 0;
+            }
 
             // VIDEO
             if (exportType == "EMZ")
@@ -117,6 +143,34 @@ namespace KFN_Viewer
             return new string(Encoding.GetEncoding(detEncoding).GetChars(data));
         }
 
+        private void UpdateArtistTitleInLRC(string artist, string title)
+        {
+            string origText = lyricPreview.Text;
+            if (artist != null && artist.Length > 0)
+            {
+                if (Regex.IsMatch(origText, @"\[ar:[^\]]+\]"))
+                {
+                    origText = Regex.Replace(origText, @"\[ar:[^\n]+", "[ar:" + artist + "]");
+                }
+                else
+                {
+                    origText = "[ar:" + artist + "]\n" + origText;
+                }
+            }
+            if (title != null && title.Length > 0)
+            {
+                if (Regex.IsMatch(origText, @"\[ti:[^\]]+\]"))
+                {
+                    origText = Regex.Replace(origText, @"\[ti:[^\n]+", "[ti:" + title + "]");
+                }
+                else
+                {
+                    origText = "[ti:" + title + "]\n" + origText;
+                }
+            }
+            lyricPreview.Text = origText;
+        }
+
         private void AudioSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             
@@ -125,6 +179,16 @@ namespace KFN_Viewer
         private void LyricSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             lyricPreview.Text = ((KeyValuePair<string, string>)lyricSelect.SelectedItem).Value;
+        }
+
+        private void ArtistSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            this.UpdateArtistTitleInLRC((string)artistSelect.SelectedItem, null);
+        }
+
+        private void TitleSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            this.UpdateArtistTitleInLRC(null, (string)titleSelect.SelectedItem);
         }
     }
 }

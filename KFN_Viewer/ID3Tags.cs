@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Linq;
 
 class ID3Tags
 {
@@ -20,6 +22,25 @@ class ID3Tags
         byte[] dStream = new byte[dataStream.Length];
         dataStream.Read(dStream, 0, dStream.Length);
         return dStream;
+    }
+
+    public string[] GetArtistAndTitle(byte[] data)
+    {
+        Stream dataStream = new MemoryStream(data);
+        TagLib.File tagData = TagLib.File.Create(new FileBytesAbstraction("tempFile.mp3", dataStream));
+        string artist = (tagData.Tag.Performers.Length > 0) ? toUTF8(tagData.Tag.Performers[0]) : null;
+        string title = (tagData.Tag.Title != null && tagData.Tag.Title.Length > 0) ? toUTF8(tagData.Tag.Title) : null;
+
+        return new string[] { artist, title };
+    }
+
+    private string toUTF8(string text)
+    {
+        if (text == null || text.Length == 0) return "";
+        return new string(text.ToCharArray().
+            Select(x => ((x + 848) >= 'А' && (x + 848) <= 'ё') ? (char)(x + 848) : x).
+            ToArray()
+        );
     }
 
     private class FileBytesAbstraction : TagLib.File.IFileAbstraction
