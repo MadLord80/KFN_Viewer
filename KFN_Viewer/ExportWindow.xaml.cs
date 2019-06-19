@@ -23,11 +23,17 @@ namespace KFN_Viewer
 
             videoLabel.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
             videoSelect.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            playVideoButton.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            deleteID3Tags.IsChecked = true;
             deleteID3Tags.Visibility = (exportType == "MP3+LRC") ? Visibility.Visible : Visibility.Hidden;
             artistLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
             titleLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
             artistTextBox.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
             titleTextBox.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
+
+            // TODO
+            playVideoButton.IsEnabled = false;
+            playAudioButton.IsEnabled = false;
 
             // AUDIO
             List<KFN.ResourceFile> audios = KFN.Resources.Where(r => r.FileType == "Audio").ToList();
@@ -68,6 +74,8 @@ namespace KFN_Viewer
             if (lyrics.Count == 1) { lyricSelect.IsEnabled = false; }
             lyricSelect.ItemsSource = lyrics;
             lyricPreview.Text = ((KeyValuePair<string, string>)lyricSelect.SelectedItem).Value;
+
+            // ARTIST-TITLE
 
             // VIDEO
             if (exportType == "EMZ")

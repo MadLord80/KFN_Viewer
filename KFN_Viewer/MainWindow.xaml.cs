@@ -54,6 +54,8 @@ namespace KFN_Viewer
             viewConfigButton.Click += ViewConfigButtonClick;
             viewConfigButton.IsEnabled = false;
             toEMZMenu.IsEnabled = false;
+            toMP3LRCMenu.IsEnabled = false;
+            toKFNMenu.IsEnabled = false;
             //createEMZ2Button.IsEnabled = false;
             //createEMZButton.IsEnabled = false;
             ResourceViewInit();
@@ -156,6 +158,7 @@ namespace KFN_Viewer
                 this.UpdateKFN();
                 viewConfigButton.IsEnabled = true;
                 toEMZMenu.IsEnabled = true;
+                toMP3LRCMenu.IsEnabled = true;
 
                 //KFN.ResorceFile resource = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
                 //byte[] data = KFN.GetDataFromResource(resource);
@@ -361,6 +364,12 @@ namespace KFN_Viewer
         private void toEMZMenu_Click(object sender, RoutedEventArgs e)
         {
             ExportWindow exportWindow = new ExportWindow("EMZ", this.KFN);
+            exportWindow.Show();
+        }
+
+        private void ToMP3LRCMenu_Click(object sender, RoutedEventArgs e)
+        {
+            ExportWindow exportWindow = new ExportWindow("MP3+LRC", this.KFN);
             exportWindow.Show();
         }
 
