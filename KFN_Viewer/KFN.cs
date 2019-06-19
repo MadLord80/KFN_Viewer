@@ -15,7 +15,7 @@ public class KFN
     private string error;
     private Dictionary<string, string> properties = new Dictionary<string, string>();
     private List<string> unknownProperties = new List<string>();
-    private List<ResorceFile> resources = new List<ResorceFile>();
+    private List<ResourceFile> resources = new List<ResourceFile>();
     private long endOfHeaderOffset;
     // US-ASCII
     private int resourceNamesEncodingAuto = 20127;
@@ -91,7 +91,7 @@ public class KFN
         get { return this.unknownProperties; }
     }
 
-    public List<ResorceFile> Resources
+    public List<ResourceFile> Resources
     {
         get { return this.resources; }
     }
@@ -142,7 +142,7 @@ public class KFN
         public Stream WriteStream { get; private set; }
     }
 
-    public class ResorceFile
+    public class ResourceFile
     {
         private string Type;
         private string Name;
@@ -193,7 +193,7 @@ public class KFN
             get { return this.Encrypted; }
         }
 
-        public ResorceFile(string type, string name, int enclength, int length, int offset, bool encrypted)
+        public ResourceFile(string type, string name, int enclength, int length, int offset, bool encrypted)
         {
             this.Type = type;
             this.Name = name;
@@ -336,7 +336,7 @@ public class KFN
                 int useEncoding = (filesEncoding != 0) ? filesEncoding : resourceNamesEncodingAuto;
                 string fName = new string(Encoding.GetEncoding(useEncoding).GetChars(resourceName));
 
-                this.resources.Add(new KFN.ResorceFile(
+                this.resources.Add(new KFN.ResourceFile(
                     this.GetFileType(resourceType),
                     fName,
                     BitConverter.ToInt32(resourceEncryptedLenght, 0),
@@ -360,21 +360,21 @@ public class KFN
             this.error = "Can`t find audio source property!";
             return null;
         }
-        ResorceFile audioResource = this.Resources.Where(r => r.FileName == audioFile).FirstOrDefault();
+        ResourceFile audioResource = this.Resources.Where(r => r.FileName == audioFile).FirstOrDefault();
         if (audioResource == null)
         {
             this.error = "Can`t find resource for audio source property!";
             return null;
         }
 
-        ResorceFile videoResource = this.GetVideoResource();
+        ResourceFile videoResource = this.GetVideoResource();
         if (withVideo && videoResource == null)
         {
             this.error = "Can`t find or KFN contain more one video resource!";
             return null;
         }
 
-        ResorceFile lyricResource = this.Resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
+        ResourceFile lyricResource = this.Resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
         if (lyricResource == null)
         {
             this.error = "Can`t find Song.ini!";
@@ -581,14 +581,14 @@ public class KFN
         return sourceProp.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Last();
     }
 
-    public ResorceFile GetVideoResource()
+    public ResourceFile GetVideoResource()
     {
         // kfn may contain more then one video resource
-        ResorceFile[] videos = this.resources.Where(r => r.FileType == "Video").ToArray();
+        ResourceFile[] videos = this.resources.Where(r => r.FileType == "Video").ToArray();
         return (videos.Length == 1) ? videos[0] : null;
     }
 
-    public byte[] GetDataFromResource(ResorceFile resource)
+    public byte[] GetDataFromResource(ResourceFile resource)
     {
         byte[] data = new byte[resource.EncLength];
         using (FileStream fs = new FileStream(this.fileName, FileMode.Open, FileAccess.Read))

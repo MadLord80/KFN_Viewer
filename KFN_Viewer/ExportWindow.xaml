@@ -13,9 +13,9 @@
         <Label x:Name="videoLabel" Content="Video: " HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top"/>
         <ComboBox x:Name="videoSelect" HorizontalAlignment="Left" Margin="79,59,0,0" VerticalAlignment="Top" Width="338"/>
         <Label Content="Audio: " HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="audioSelect" HorizontalAlignment="Left" Margin="79,91,0,0" VerticalAlignment="Top" Width="338"/>
+        <ComboBox x:Name="audioSelect" HorizontalAlignment="Left" Margin="79,91,0,0" VerticalAlignment="Top" Width="338" SelectionChanged="AudioSelect_SelectionChanged"/>
         <Label Content="Lyric: " HorizontalAlignment="Left" Margin="10,117,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="lyricSelect" HorizontalAlignment="Left" Margin="79,123,0,0" VerticalAlignment="Top" Width="338"/>
+        <ComboBox x:Name="lyricSelect" HorizontalAlignment="Left" Margin="79,123,0,0" VerticalAlignment="Top" Width="338" SelectionChanged="LyricSelect_SelectionChanged"/>
         <Label Content="Lyric preview: " HorizontalAlignment="Left" Margin="445,11,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="lyricPreview" HorizontalAlignment="Left" Height="231" Margin="454,50,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="328" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AcceptsReturn="True" AcceptsTab="True"/>
         <Label Content="Artist: " HorizontalAlignment="Left" Margin="79,149,0,0" VerticalAlignment="Top"/>

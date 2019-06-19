@@ -57,7 +57,7 @@ namespace KFN_Viewer
 
         private void ParseINI(KFN KFN)
         {
-            KFN.ResorceFile resource = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
+            KFN.ResourceFile resource = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
             byte[] data = KFN.GetDataFromResource(resource);            
             string iniText = new string(Encoding.UTF8.GetChars(data));
 
@@ -74,7 +74,7 @@ namespace KFN_Viewer
             toLRCButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
             toELYRButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
             createEMZButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
-            KFN.ResorceFile video = KFN.GetVideoResource();
+            KFN.ResourceFile video = KFN.GetVideoResource();
             createEMZ2Button.IsEnabled = ((block.Id == "1" || block.Id == "2") && video != null) ? true : false;
         }
 

@@ -120,7 +120,7 @@ namespace KFN_Viewer
 
         private void resourcesViewContext(object sender, ContextMenuEventArgs e)
         {
-            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
+            KFN.ResourceFile resource = resourcesView.SelectedItem as KFN.ResourceFile;
             System.Windows.Controls.ContextMenu rvcontext = resourcesView.ContextMenu;
             if (rvcontext.Items.Count > 1)
             {
@@ -253,7 +253,7 @@ namespace KFN_Viewer
 
         public void ViewResourceButtonClick(object sender, RoutedEventArgs e)
         {
-            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
+            KFN.ResourceFile resource = resourcesView.SelectedItem as KFN.ResourceFile;
 
             if (resource.FileType == "Text")
             {
@@ -292,7 +292,7 @@ namespace KFN_Viewer
 
         private void ExportResourceButtonClick(object sender, RoutedEventArgs e)
         {
-            KFN.ResorceFile resource = resourcesView.SelectedItem as KFN.ResorceFile;
+            KFN.ResourceFile resource = resourcesView.SelectedItem as KFN.ResourceFile;
 
             FolderBrowserDialog.SelectedPath = new FileInfo(KFN.FileName).DirectoryName;
             if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -313,7 +313,7 @@ namespace KFN_Viewer
             }
         }
 
-        private void ExportResourceToFile(KFN.ResorceFile resource, string folder)
+        private void ExportResourceToFile(KFN.ResourceFile resource, string folder)
         {
             byte[] data = KFN.GetDataFromResource(resource);
 
