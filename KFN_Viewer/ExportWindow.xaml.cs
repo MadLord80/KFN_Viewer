@@ -19,7 +19,7 @@ namespace KFN_Viewer
         {
             InitializeComponent();
 
-            WindowElement.Title += " " + exportType;
+            WindowElement.Title += exportType;
             this.KFN = KFN;
 
             videoLabel.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
@@ -115,7 +115,7 @@ namespace KFN_Viewer
                 else
                 {
                     videos.Add(new KFN.ResourceFile("Video", "don`t use video", 0, 0, 0, false));
-                }                
+                }
                 videoSelect.ItemsSource = videos;
                 videoSelect.DisplayMemberPath = "FileName";
                 videoSelect.SelectedIndex = 0;

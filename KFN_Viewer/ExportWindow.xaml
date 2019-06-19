@@ -5,31 +5,44 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KFN_Viewer"
         mc:Ignorable="d"
-        Title="Export to" 
-        Height="450" 
-        Width="800"
+        Title="Export to " 
+        Height="{Binding SystemParameters.PrimaryScreenHeight}" 
+        Width="{Binding SystemParameters.PrimaryScreenWidth}"
         Style="{StaticResource {x:Type Window}}">
     <Grid>
-        <Label x:Name="videoLabel" Content="Video: " HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="videoSelect" HorizontalAlignment="Left" Margin="79,59,0,0" VerticalAlignment="Top" Width="338"/>
-        <Label Content="Audio: " HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="audioSelect" HorizontalAlignment="Left" Margin="79,91,0,0" VerticalAlignment="Top" Width="338" SelectionChanged="AudioSelect_SelectionChanged"/>
-        <Label Content="Lyric: " HorizontalAlignment="Left" Margin="10,117,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="lyricSelect" HorizontalAlignment="Left" Margin="79,123,0,0" VerticalAlignment="Top" Width="338" SelectionChanged="LyricSelect_SelectionChanged"/>
-        <Label Content="Lyric preview: " HorizontalAlignment="Left" Margin="445,11,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="lyricPreview" HorizontalAlignment="Left" Height="231" Margin="454,50,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="328" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AcceptsReturn="True" AcceptsTab="True"/>
-        <Label x:Name="artistLabel" Content="Artist: " HorizontalAlignment="Left" Margin="79,149,0,0" VerticalAlignment="Top"/>
-        <Label x:Name="titleLabel" Content="Title: " HorizontalAlignment="Left" Margin="79,176,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="exportButton" Content="Export" HorizontalAlignment="Left" Margin="342,224,0,0" VerticalAlignment="Top" Width="75"/>
-        <CheckBox x:Name="deleteID3Tags" Content="Delete all ID3 tags" HorizontalAlignment="Left" Margin="10,59,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="playVideoButton" HorizontalAlignment="Left" Margin="422,59,0,0" VerticalAlignment="Top" Width="27" ToolTip="Play video">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Label x:Name="videoLabel" Content="Video: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Row="1"/>
+        <ComboBox x:Name="videoSelect" HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Grid.Row="1" Width="338"/>
+        <Label Content="Audio: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Row="2"/>
+        <ComboBox x:Name="audioSelect" HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Width="338" SelectionChanged="AudioSelect_SelectionChanged" Grid.Row="2"/>
+        <Label Content="Lyric: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Row="3"/>
+        <ComboBox x:Name="lyricSelect" HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Width="338" SelectionChanged="LyricSelect_SelectionChanged" Grid.Row="3"/>
+        <Label Content="Lyric preview: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Column="1"/>
+        <TextBox x:Name="lyricPreview" Margin="0" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AcceptsReturn="True" AcceptsTab="True" Grid.Column="1" Grid.RowSpan="6" Grid.Row="1" MaxHeight="500"/>
+        <Label x:Name="artistLabel" Content="Artist: " HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Grid.Row="4"/>
+        <Label x:Name="titleLabel" Content="Title: " HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Grid.Row="5"/>
+        <Button x:Name="exportButton" Content="Export" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Top" Width="75" Grid.Row="6"/>
+        <CheckBox x:Name="deleteID3Tags" Content="Delete all ID3 tags" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Row="1"/>
+        <Button x:Name="playVideoButton" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Top" Width="27" ToolTip="Play video" Grid.Row="1">
             <Path Fill="DarkCyan" Data="M 1,1 L 12,7 1,13 Z"/>
         </Button>
-        <Button x:Name="playAudioButton" HorizontalAlignment="Left" Margin="422,91,0,0" VerticalAlignment="Top" Width="27" ToolTip="Play audio">
+        <Button x:Name="playAudioButton" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Top" Width="27" ToolTip="Play audio" Grid.Row="2">
             <Path Fill="DarkCyan" Data="M 1,1 L 12,7 1,13 Z"/>
         </Button>
-        <ComboBox x:Name="artistSelect" HorizontalAlignment="Left" Margin="126,155,0,0" VerticalAlignment="Top" Width="291" SelectionChanged="ArtistSelect_SelectionChanged"/>
-        <ComboBox x:Name="titleSelect" HorizontalAlignment="Left" Margin="126,182,0,0" VerticalAlignment="Top" Width="291" SelectionChanged="TitleSelect_SelectionChanged"/>
+        <ComboBox x:Name="artistSelect" HorizontalAlignment="Left" Margin="110,0,0,0" VerticalAlignment="Top" Width="291" SelectionChanged="ArtistSelect_SelectionChanged" Grid.Row="4"/>
+        <ComboBox x:Name="titleSelect" HorizontalAlignment="Left" Margin="110,0,0,0" VerticalAlignment="Top" Width="291" SelectionChanged="TitleSelect_SelectionChanged" Grid.Row="5"/>
 
     </Grid>
 </Window>
