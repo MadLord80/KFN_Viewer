@@ -17,11 +17,11 @@
         <Label Content="Lyric: " HorizontalAlignment="Left" Margin="10,117,0,0" VerticalAlignment="Top"/>
         <ComboBox x:Name="lyricSelect" HorizontalAlignment="Left" Margin="79,123,0,0" VerticalAlignment="Top" Width="338" SelectionChanged="LyricSelect_SelectionChanged"/>
         <Label Content="Lyric preview: " HorizontalAlignment="Left" Margin="445,11,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="lyricPreview" HorizontalAlignment="Left" Height="231" Margin="454,50,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="328" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AcceptsReturn="True" AcceptsTab="True"/>
-        <Label Content="Artist: " HorizontalAlignment="Left" Margin="79,149,0,0" VerticalAlignment="Top"/>
-        <Label Content="Title: " HorizontalAlignment="Left" Margin="79,176,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="artistTextBox" HorizontalAlignment="Left" Height="23" Margin="131,153,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="286"/>
-        <TextBox x:Name="titleTextBox" HorizontalAlignment="Left" Height="23" Margin="131,180,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="286"/>
+        <TextBox x:Name="lyricPreview" HorizontalAlignment="Left" Height="231" Margin="454,50,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="328" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AcceptsReturn="True" AcceptsTab="True"/>
+        <Label x:Name="artistLabel" Content="Artist: " HorizontalAlignment="Left" Margin="79,149,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="titleLabel" Content="Title: " HorizontalAlignment="Left" Margin="79,176,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="artistTextBox" HorizontalAlignment="Left" Height="23" Margin="131,153,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="286"/>
+        <TextBox x:Name="titleTextBox" HorizontalAlignment="Left" Height="23" Margin="131,180,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="286"/>
         <Button x:Name="exportButton" Content="Export" HorizontalAlignment="Left" Margin="342,224,0,0" VerticalAlignment="Top" Width="75"/>
         <CheckBox x:Name="deleteID3Tags" Content="Delete all ID3 tags" HorizontalAlignment="Left" Margin="10,36,0,0" VerticalAlignment="Top"/>
 

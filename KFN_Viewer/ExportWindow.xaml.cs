@@ -24,9 +24,18 @@ namespace KFN_Viewer
             videoLabel.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
             videoSelect.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
             deleteID3Tags.Visibility = (exportType == "MP3+LRC") ? Visibility.Visible : Visibility.Hidden;
+            artistLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            titleLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            artistTextBox.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            titleTextBox.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
 
             // AUDIO
             List<KFN.ResourceFile> audios = KFN.Resources.Where(r => r.FileType == "Audio").ToList();
+            string audioSource = KFN.GetAudioSourceName();
+            audioSelect.ItemsSource = audios;
+            audioSelect.DisplayMemberPath = "FileName";
+            audioSelect.SelectedItem = audios.Where(a => a.FileName == audioSource).First();
+            if (audios.Count == 1) { audioSelect.IsEnabled = false; }
 
             // LYRICS
             Dictionary<string, string> lyrics = new Dictionary<string, string>();
@@ -45,11 +54,19 @@ namespace KFN_Viewer
                 string lyricFromBlock = (exportType == "EMZ")
                     ? KFN.INIToELYR(block.Content)
                     : KFN.INIToExtLRC(block.Content);
-                lyrics.Add(block.Name, lyricFromBlock);
+                if (lyricFromBlock != null)
+                {
+                    lyrics.Add("Song.ini: " + block.Name, lyricFromBlock);
+                }
+                else
+                {
+                    lyrics.Add("Song.ini: " + block.Name, "Can`t convert lyric from Song.ini");
+                }
             }
-            lyricSelect.ItemsSource = lyrics;
             lyricSelect.DisplayMemberPath = "Key";
             lyricSelect.SelectedIndex = 0;
+            if (lyrics.Count == 1) { lyricSelect.IsEnabled = false; }
+            lyricSelect.ItemsSource = lyrics;
             lyricPreview.Text = ((KeyValuePair<string, string>)lyricSelect.SelectedItem).Value;
 
             // VIDEO
