@@ -5,9 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KFN_Viewer"
         mc:Ignorable="d"
+        Height="{Binding SystemParameters.PrimaryScreenHeight}" 
+        Width="{Binding SystemParameters.PrimaryScreenWidth}"
         Title="Image:  ">
     <Grid>
-        <Image x:Name="ImageElement" HorizontalAlignment="Center" Margin="10,10,10,10" VerticalAlignment="Center" Stretch="Fill"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Image x:Name="ImageElement" Margin="0" Stretch="Fill"/>
 
     </Grid>
 </Window>

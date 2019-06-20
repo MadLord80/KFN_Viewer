@@ -284,6 +284,13 @@ namespace KFN_Viewer
             exportWindow.Show();
         }
 
+        private void ToKFNMenu_Click(object sender, RoutedEventArgs e)
+        {
+            //just decrypted
+            //only with audio and lyric(and modified ? Song.ini, +-decrypt)
+            //select lyric
+        }
+
         // karaore text
         //https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/how-to-create-outlined-text
         //https://ru.stackoverflow.com/questions/630777/%D0%97%D0%B0%D0%BA%D1%80%D0%B0%D1%81%D0%B8%D1%82%D1%8C-%D1%82%D0%B5%D0%BA%D1%81%D1%82-%D1%81%D0%BB%D0%BE%D0%B2%D0%BE-%D0%B1%D1%83%D0%BA%D0%B2%D1%83

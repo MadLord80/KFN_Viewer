@@ -1,17 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace KFN_Viewer
 {
@@ -27,8 +16,6 @@ namespace KFN_Viewer
             ImageWindowElement.Title += name;
             BitmapImage picture = LoadImage(image);
             ImageElement.Source = picture;
-            //ImageWindowElement.Width = picture.Width;
-            //ImageWindowElement.Height = picture.Height;
             ImageWindowElement.Title += " (" + picture.Width + "x" + picture.Height + ")";
         }
 

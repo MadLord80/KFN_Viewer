@@ -5,12 +5,22 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KFN_Viewer"
         mc:Ignorable="d"
-        Title="Song.ini" Height="513.83" Width="800"
+        Title="Song.ini"
+        Height="{Binding SystemParameters.PrimaryScreenHeight}" 
+        Width="{Binding SystemParameters.PrimaryScreenWidth}"
         Style="{StaticResource {x:Type Window}}">
     <Grid>
-        <ListView x:Name="iniBlocksView" HorizontalAlignment="Left" VerticalAlignment="Top" Style="{StaticResource ListViewWithGridViewStyle}" Height="350" Margin="10,42,466,26" Width="316" MouseUp="IniBlocksView_MouseUp"/>
-        <Label Content="Blocks" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="blockContent" TextWrapping="Wrap" Width="432" Height="350" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="350,42,0,0" VerticalScrollBarVisibility="Auto"/>
-        <Label Content="Content" HorizontalAlignment="Left" Margin="350,10,0,0" VerticalAlignment="Top"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <ListView x:Name="iniBlocksView" Style="{StaticResource ListViewWithGridViewStyle}" Margin="0,0,5,0" MouseUp="IniBlocksView_MouseUp" Grid.Row="1"/>
+        <Label Content="Blocks" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top"/>
+        <TextBox x:Name="blockContent" TextWrapping="Wrap" Margin="5,0,0,0" VerticalScrollBarVisibility="Auto" AcceptsReturn="True" AcceptsTab="True" Grid.Row="1" Grid.Column="1"/>
+        <Label Content="Content" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Column="1"/>
     </Grid>
 </Window>

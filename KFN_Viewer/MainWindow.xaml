@@ -51,7 +51,7 @@
             <MenuItem Header="Export" Height="30" Width="55" FontSize="14">
                 <MenuItem x:Name="toEMZMenu" Header="To EMZ" HorizontalAlignment="Left" Height="25" Width="169" Margin="0,0,-34,0" Click="toEMZMenu_Click"/>
                 <MenuItem x:Name="toMP3LRCMenu" Header="To MP3+LRC" Height="25" Margin="0,0,-31,0" Click="ToMP3LRCMenu_Click"/>
-                <MenuItem x:Name="toKFNMenu" Header="To KFN" HorizontalAlignment="Left" Height="25" Width="161" Margin="0,0,-26,0"/>
+                <MenuItem x:Name="toKFNMenu" Header="To KFN" HorizontalAlignment="Left" Height="25" Width="161" Margin="0,0,-26,0" Click="ToKFNMenu_Click"/>
             </MenuItem>
             <MenuItem Header="Tools" Height="30" Width="55" IsEnabled="False" FontSize="14"/>
             <MenuItem x:Name="resEncMenuItem" Header="Resource encoding" Height="30" Width="133" FontSize="14"/>
