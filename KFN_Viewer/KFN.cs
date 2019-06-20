@@ -351,35 +351,37 @@ public class KFN
         }
     }
 
-    public byte[] createEMZ(string iniOrElyrText, bool withVideo = false)
+    public byte[] createEMZ(string iniOrElyrText, bool withVideo = false, ResourceFile video = null, ResourceFile audio = null)
     {
         this.error = null;
-        string audioFile = this.GetAudioSourceName();
+        string audioFile = (audio != null) ? audio.FileName : this.GetAudioSourceName();
         if (audioFile == null)
         {
             this.error = "Can`t find audio source property!";
             return null;
         }
-        ResourceFile audioResource = this.Resources.Where(r => r.FileName == audioFile).FirstOrDefault();
+        ResourceFile audioResource = (audio != null)
+            ? audio
+            : this.Resources.Where(r => r.FileName == audioFile).FirstOrDefault();
         if (audioResource == null)
         {
             this.error = "Can`t find resource for audio source property!";
             return null;
         }
 
-        ResourceFile videoResource = this.GetVideoResource();
+        ResourceFile videoResource = (video != null) ? video : this.GetVideoResource();
         if (withVideo && videoResource == null)
         {
             this.error = "Can`t find or KFN contain more one video resource!";
             return null;
         }
 
-        ResourceFile lyricResource = this.Resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-        if (lyricResource == null)
-        {
-            this.error = "Can`t find Song.ini!";
-            return null;
-        }
+        //ResourceFile lyricResource = this.Resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
+        //if (lyricResource == null)
+        //{
+        //    this.error = "Can`t find Song.ini!";
+        //    return null;
+        //}
 
         FileInfo sourceFile = new FileInfo(audioFile);
         string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";

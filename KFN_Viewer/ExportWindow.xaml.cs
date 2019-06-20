@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Forms;
 
 using Mozilla.NUniversalCharDet;
 
@@ -14,6 +17,9 @@ namespace KFN_Viewer
     public partial class ExportWindow : Window
     {
         private KFN KFN;
+        private string exportType;
+        private ID3Tags ID3Class = new ID3Tags();
+        private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
 
         public ExportWindow(string exportType, KFN KFN)
         {
@@ -21,6 +27,7 @@ namespace KFN_Viewer
 
             WindowElement.Title += exportType;
             this.KFN = KFN;
+            this.exportType = exportType;
 
             videoLabel.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
             videoSelect.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
@@ -87,10 +94,9 @@ namespace KFN_Viewer
                 KeyValuePair<string, string> kfnTitle = KFN.Properties.Where(p => p.Key == "Title").FirstOrDefault();
                 if (kfnTitle.Value != null && kfnTitle.Value.Length > 0) { titles.Add(kfnTitle.Value); }
 
-                ID3Tags id3 = new ID3Tags();
                 foreach (KFN.ResourceFile resource in KFN.Resources.Where(r => r.FileType == "Audio"))
                 {
-                    string[] atFromID3 = id3.GetArtistAndTitle(KFN.GetDataFromResource(resource));
+                    string[] atFromID3 = ID3Class.GetArtistAndTitle(KFN.GetDataFromResource(resource));
                     if (atFromID3[0] != null) { artists.Add(atFromID3[0]); }
                     if (atFromID3[1] != null) { titles.Add(atFromID3[1]); }
                 }
@@ -189,6 +195,72 @@ namespace KFN_Viewer
         private void TitleSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             this.UpdateArtistTitleInLRC(null, (string)titleSelect.SelectedItem);
+        }
+
+        private void ExportButton_Click(object sender, RoutedEventArgs e)
+        {
+            KFN.ResourceFile audio = (KFN.ResourceFile)audioSelect.SelectedItem;
+            if (audio == null) { return; }
+
+            string lyric = lyricPreview.Text;
+            if (lyric.Length == 0 || lyric.Contains("Can`t convert lyric from Song.ini")) { return; }
+            
+            FileInfo kfnFile = new FileInfo(KFN.FileName);
+            FolderBrowserDialog.SelectedPath = kfnFile.DirectoryName;
+            if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string exportFolder = FolderBrowserDialog.SelectedPath;
+                try
+                {
+                    System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
+                }
+                catch (UnauthorizedAccessException error)
+                {
+                    System.Windows.MessageBox.Show(error.Message);
+                    return;
+                }
+
+                if (this.exportType == "EMZ")
+                {
+                    KFN.ResourceFile video = (KFN.ResourceFile)videoSelect.SelectedItem;
+                    byte[] fileData = KFN.createEMZ(lyric, video.FileLength > 0, video, audio);
+                    if (fileData == null)
+                    {
+                        System.Windows.MessageBox.Show((KFN.isError != null)
+                            ? KFN.isError
+                            : "Fail to create EMZ!");
+                        return;
+                    }
+                    string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
+                    using (FileStream fs = new FileStream(exportFolder + "\\" + emzFileName, FileMode.Create, FileAccess.Write))
+                    {
+                        fs.Write(fileData, 0, fileData.Length);
+                    }
+                    System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
+                }
+                else if (this.exportType == "MP3+LRC")
+                {
+                    FileInfo audioFile = new FileInfo(audio.FileName);
+                    string mp3FileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + audioFile.Extension;
+                    string lrcFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".lrc";
+
+                    byte[] mp3Data = KFN.GetDataFromResource(audio);
+                    if (deleteID3Tags.IsChecked == true)
+                    {
+                        mp3Data = ID3Class.RemoveAllTags(mp3Data);
+                    }
+                    using (FileStream fs = new FileStream(exportFolder + "\\" + mp3FileName, FileMode.Create, FileAccess.Write))
+                    {
+                        fs.Write(mp3Data, 0, mp3Data.Length);
+                    }
+                    byte[] lrcData = Encoding.UTF8.GetBytes(lyric);
+                    using (FileStream fs = new FileStream(exportFolder + "\\" + lrcFileName, FileMode.Create, FileAccess.Write))
+                    {
+                        fs.Write(lrcData, 0, lrcData.Length);
+                    }
+                    System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + mp3FileName);
+                }
+            }
         }
     }
 }
