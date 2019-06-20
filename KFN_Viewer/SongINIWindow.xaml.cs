@@ -1,10 +1,7 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Linq;
 using System.Text;
 using System.Windows.Controls;
-using System.IO;
-using System.Windows.Forms;
 
 namespace KFN_Viewer
 {
@@ -14,8 +11,6 @@ namespace KFN_Viewer
     public partial class SongINIWindow : Window
     {
         private KFN KFN;
-        private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
-        private string editedText = null;
         
         public SongINIWindow(KFN KFN)
         {
@@ -46,12 +41,7 @@ namespace KFN_Viewer
                 DisplayMemberBinding = new System.Windows.Data.Binding("Type")
             });
             iniBlocksView.View = blocksGrid;
-
-            toLRCButton.IsEnabled = false;
-            toELYRButton.IsEnabled = false;
-            createEMZButton.IsEnabled = false;
-            createEMZ2Button.IsEnabled = false;
-
+            
             this.ParseINI(KFN);
         }
 
@@ -71,100 +61,6 @@ namespace KFN_Viewer
         {
             SongINI.BlockInfo block = iniBlocksView.SelectedItem as SongINI.BlockInfo;
             blockContent.Text = block.Content;
-            toLRCButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
-            toELYRButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
-            createEMZButton.IsEnabled = (block.Id == "1" || block.Id == "2") ? true : false;
-            KFN.ResourceFile video = KFN.GetVideoResource();
-            createEMZ2Button.IsEnabled = ((block.Id == "1" || block.Id == "2") && video != null) ? true : false;
-        }
-
-        private void createEMZ2Button_Click(object sender, RoutedEventArgs e)
-        {
-            this.createEMZ(true);
-        }
-
-        private void createEMZButton_Click(object sender, RoutedEventArgs e)
-        {
-            this.createEMZ();
-        }
-
-        private void createEMZ(bool withVideo = false)
-        {
-            SongINI.BlockInfo block = iniBlocksView.SelectedItem as SongINI.BlockInfo;
-            byte[] emzData = KFN.createEMZ((this.editedText == null) ? block.Content : this.editedText, withVideo);
-            if (emzData == null)
-            {
-                System.Windows.MessageBox.Show((KFN.isError != null)
-                    ? KFN.isError
-                    : "Fail to create EMZ!");
-                return;
-            }
-
-            FileInfo kfnFile = new FileInfo(KFN.FileName);
-            string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
-            if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                string exportFolder = FolderBrowserDialog.SelectedPath;
-                try
-                {
-                    System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
-                }
-                catch (UnauthorizedAccessException error)
-                {
-                    System.Windows.MessageBox.Show(error.Message);
-                    return;
-                }
-
-                using (FileStream fs = new FileStream(exportFolder + "\\" + emzFileName, FileMode.Create, FileAccess.Write))
-                {
-                    fs.Write(emzData, 0, emzData.Length);
-                }
-                System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
-            }
-        }
-
-        private void ToLRCButton_Click(object sender, RoutedEventArgs e)
-        {
-            SongINI.BlockInfo block = iniBlocksView.SelectedItem as SongINI.BlockInfo;
-            FileInfo sourceFile = new FileInfo(KFN.GetAudioSourceName());
-            string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".lrc";
-            string extLRC = KFN.INIToExtLRC(block.Content);
-            if (extLRC == null)
-            {
-                System.Windows.MessageBox.Show((KFN.isError != null)
-                    ? KFN.isError
-                    : "Fail to create Ext LRC!");
-                return;
-            }
-            Window viewWindow = new ViewWindow(
-                lrcFileName,
-                extLRC,
-                "UTF-8"
-            );
-            viewWindow.Show();
-        }
-
-        private void toELYRButton_Click(object sender, RoutedEventArgs e)
-        {
-            SongINI.BlockInfo block = iniBlocksView.SelectedItem as SongINI.BlockInfo;
-            FileInfo sourceFile = new FileInfo(KFN.GetAudioSourceName());
-            string lrcFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
-            string elyr = KFN.INIToELYR(block.Content);
-            if (elyr == null)
-            {
-                System.Windows.MessageBox.Show((KFN.isError != null)
-                    ? KFN.isError
-                    : "Fail to create ELYR!");
-                return;
-            }
-            ViewWindow viewWindow = new ViewWindow(
-                lrcFileName,
-                elyr,
-                "UTF-8",
-                this.editedText
-            );
-            viewWindow.ShowDialog();
-            this.editedText = viewWindow.EditedText;
         }
 
         private void AutoSizeColumns(GridView gv)

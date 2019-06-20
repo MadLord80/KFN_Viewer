@@ -56,14 +56,6 @@ public class KFN
         {5, "Video"},
         {6, "Visualization"}
     };
-    //private Dictionary<int, string> iniBlockTypes = new Dictionary<int, string> {
-    //    {1, "Vertical text"},
-    //    {2, "Classic karaoke"},
-    //    {21, "Sprites"},
-    //    {62, "Video"},
-    //    {51, "Background"},
-    //    {53, "MilkDrop"}
-    //};
 
     public KFN(string fileName)
     {
@@ -114,12 +106,6 @@ public class KFN
         return "Unknown (" + ftype + ")";
     }
 
-    //public string GetIniBlockType(int id)
-    //{
-    //    if (iniBlockTypes.ContainsKey(id)) { return iniBlockTypes[id]; }
-    //    return "Unknown [" + id + "]";
-    //}
-
     private class FileBytesAbstraction : TagLib.File.IFileAbstraction
     {
         public FileBytesAbstraction(string name, byte[] data)
@@ -162,12 +148,10 @@ public class KFN
         public int EncLength
         {
             get { return this.EncryptedLength; }
-            //set { this.Length = value; }
         }
         public int FileLength
         {
             get { return this.Length; }
-            //set { this.Length = value; }
         }
         public string FileSize
         {
@@ -375,13 +359,6 @@ public class KFN
             this.error = "Can`t find or KFN contain more one video resource!";
             return null;
         }
-
-        //ResourceFile lyricResource = this.Resources.Where(r => r.FileName == "Song.ini").FirstOrDefault();
-        //if (lyricResource == null)
-        //{
-        //    this.error = "Can`t find Song.ini!";
-        //    return null;
-        //}
 
         FileInfo sourceFile = new FileInfo(audioFile);
         string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";

@@ -5,16 +5,20 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KFN_Viewer"
         mc:Ignorable="d"
-        Title="View: " Height="713.975" Width="485.891"
+        Title="View: "
+        Height="{Binding SystemParameters.PrimaryScreenHeight}" 
+        Width="400"        
         Style="{StaticResource {x:Type Window}}">
     <Grid>
-        <!--<ScrollViewer Grid.Row="1">-->
-        <!--<TextBlock x:Name="TextWindow" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top"/>-->
-        <TextBox x:Name="TextWindow" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,44,0,10"/>
-        <ComboBox x:Name="textSizeBox" HorizontalAlignment="Left" Margin="75,10,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="TextSizeBox_SelectionChanged"/>
-        <Label Content="Text size:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="saveButton" Content="Save" HorizontalAlignment="Left" Margin="243,10,0,0" VerticalAlignment="Top" Width="75" Click="saveButton_Click"/>
-        <Button x:Name="resetButton" Content="Reset" HorizontalAlignment="Left" Margin="323,10,0,0" VerticalAlignment="Top" Width="58" Click="ResetButton_Click"/>
-        <!--</ScrollViewer>-->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBox x:Name="TextWindow" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0" Grid.Row="1"/>
+        <ComboBox x:Name="textSizeBox" HorizontalAlignment="Left" Margin="65,0,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="TextSizeBox_SelectionChanged"/>
+        <Label Content="Text size:" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top"/>
     </Grid>
 </Window>

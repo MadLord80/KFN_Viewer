@@ -34,10 +34,6 @@ namespace KFN_Viewer
             {
                 encodings.Add(enc.CodePage, enc.CodePage + ": " + enc.DisplayName);
             }
-            //FilesEncodingElement.DisplayMemberPath = "Value";
-            //FilesEncodingElement.ItemsSource = encodings;
-            //FilesEncodingElement.SelectedIndex = 0;
-            //FilesEncodingElement.IsEnabled = false;
             foreach (KeyValuePair<int,string> enc in encodings)
             {
                 System.Windows.Controls.MenuItem mi = new System.Windows.Controls.MenuItem {
@@ -56,13 +52,7 @@ namespace KFN_Viewer
             toEMZMenu.IsEnabled = false;
             toMP3LRCMenu.IsEnabled = false;
             toKFNMenu.IsEnabled = false;
-            //createEMZ2Button.IsEnabled = false;
-            //createEMZButton.IsEnabled = false;
             ResourceViewInit();
-#if !DEBUG
-            testButton.Visibility = Visibility.Hidden;               
-            ExportAllButton.Visibility = Visibility.Hidden;
-#endif
         }
 
         private void resEncMenuItem_Select(object sender, RoutedEventArgs e)
@@ -140,14 +130,11 @@ namespace KFN_Viewer
             }
         }
 
-        //private void OpenFileButton_Click(object sender, RoutedEventArgs e)
         private void OpenKFNMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (OpenFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 viewConfigButton.IsEnabled = false;
-                //createEMZButton.IsEnabled = false;
-                //createEMZ2Button.IsEnabled = false;
                 KFN = new KFN(OpenFileDialog.FileName);
                 if (KFN.isError != null)
                 {
@@ -159,18 +146,6 @@ namespace KFN_Viewer
                 viewConfigButton.IsEnabled = true;
                 toEMZMenu.IsEnabled = true;
                 toMP3LRCMenu.IsEnabled = true;
-
-                //KFN.ResorceFile resource = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
-                //byte[] data = KFN.GetDataFromResource(resource);
-                //string iniText = new string(Encoding.UTF8.GetChars(data));
-                //sINI = new SongINI(iniText);
-                //int textBlocksCount = sINI.Blocks.Where(b => b.Id == "1" || b.Id == "2").ToArray().Length;
-                //KFN.ResorceFile video = KFN.GetVideoResource();
-                //if (textBlocksCount == 1)
-                //{
-                //    createEMZButton.IsEnabled = true;
-                //    if (video != null) { createEMZ2Button.IsEnabled = true; }
-                //}
             }
         }
 
@@ -189,64 +164,7 @@ namespace KFN_Viewer
             AutoSizeColumns(resourcesView.View as GridView);
 
             resEncMenuItem.IsEnabled = true;
-            //FilesEncodingElement.IsEnabled = true;
-        }
-
-        //private void FilesEncodingElement_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        //{
-        //    KeyValuePair<int, string> selectedEncoding = (KeyValuePair<int, string>)FilesEncodingElement.SelectedItem;
-        //    if (KFN != null)
-        //    {
-        //        KFN.ReadFile(selectedEncoding.Key);
-        //        this.UpdateKFN();
-        //    }
-        //}
-
-        private void createEMZ2Button_Click(object sender, RoutedEventArgs e)
-        {
-            this.createEMZ(true);
-        }
-
-        private void createEMZButton_Click(object sender, RoutedEventArgs e)
-        {
-            this.createEMZ();
-        }
-
-        private void createEMZ(bool withVideo = false)
-        {
-            SongINI.BlockInfo block = sINI.Blocks.Where(b => b.Id == "1" || b.Id == "2").First();
-            byte[] emzData = KFN.createEMZ(block.Content, withVideo);
-            if (emzData == null)
-            {
-                System.Windows.MessageBox.Show((KFN.isError != null)
-                    ? KFN.isError
-                    : "Fail to create EMZ!");
-                return;
-            }
-
-            FileInfo kfnFile = new FileInfo(KFN.FileName);
-            string emzFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".emz";
-            FolderBrowserDialog.SelectedPath = kfnFile.DirectoryName;
-            if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                string exportFolder = FolderBrowserDialog.SelectedPath;
-                try
-                {
-                    System.Security.AccessControl.DirectorySecurity ds = Directory.GetAccessControl(exportFolder);
-                }
-                catch (UnauthorizedAccessException error)
-                {
-                    System.Windows.MessageBox.Show(error.Message);
-                    return;
-                }
-
-                using (FileStream fs = new FileStream(exportFolder + "\\" + emzFileName, FileMode.Create, FileAccess.Write))
-                {
-                    fs.Write(emzData, 0, emzData.Length);
-                }
-                System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + emzFileName);
-            }
-        }
+        }        
 
         public void ViewConfigButtonClick(object sender, RoutedEventArgs e)
         {
@@ -323,13 +241,6 @@ namespace KFN_Viewer
             using (FileStream fs = new FileStream(folder + "\\" + resource.FileName, FileMode.Create, FileAccess.Write))
             {
                 fs.Write(data, 0, data.Length);
-            }
-        }
-        private void ExportTextToFile(string fileName, byte[] text, string folder)
-        {
-            using (FileStream fs = new FileStream(folder + "\\" + fileName, FileMode.Create, FileAccess.Write))
-            {
-                fs.Write(text, 0, text.Length);
             }
         }
 

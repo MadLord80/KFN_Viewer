@@ -10,13 +10,7 @@
     <Grid>
         <ListView x:Name="iniBlocksView" HorizontalAlignment="Left" VerticalAlignment="Top" Style="{StaticResource ListViewWithGridViewStyle}" Height="350" Margin="10,42,466,26" Width="316" MouseUp="IniBlocksView_MouseUp"/>
         <Label Content="Blocks" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-        <!--<ScrollViewer Margin="350,42,10,26">-->
-            <TextBox x:Name="blockContent" TextWrapping="Wrap" Width="432" Height="350" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="350,42,0,0" VerticalScrollBarVisibility="Auto"/>
-        <!--</ScrollViewer>-->
+        <TextBox x:Name="blockContent" TextWrapping="Wrap" Width="432" Height="350" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="350,42,0,0" VerticalScrollBarVisibility="Auto"/>
         <Label Content="Content" HorizontalAlignment="Left" Margin="350,10,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="toLRCButton" Content="To Ext LRC" HorizontalAlignment="Left" Margin="350,407,0,0" VerticalAlignment="Top" Width="75" Click="ToLRCButton_Click"/>
-        <Button x:Name="toELYRButton" Content="To ELYR" HorizontalAlignment="Left" Margin="430,407,0,0" VerticalAlignment="Top" Width="75" Click="toELYRButton_Click"/>
-        <Button x:Name="createEMZButton" Content="Create EMZ w/o video" HorizontalAlignment="Left" Margin="510,407,0,0" VerticalAlignment="Top" Width="134" Click="createEMZButton_Click"/>
-        <Button x:Name="createEMZ2Button" Content="Create EMZ w/ video" HorizontalAlignment="Left" Margin="649,407,0,0" VerticalAlignment="Top" Width="133" Click="createEMZ2Button_Click"/>
     </Grid>
 </Window>
