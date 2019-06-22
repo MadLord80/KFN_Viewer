@@ -596,6 +596,14 @@ public class KFN
                     maxProps--;
                     continue;
                 }
+                else if (propName == "RGHT")
+                {
+                    byte[] zeroValue = new byte[4];
+                    decFile.Write(zeroValue, 0, zeroValue.Length);
+
+                    maxProps--;
+                    continue;
+                }
                 if (prop[4] == 1)
                 {
                     decFile.Position += 4;
