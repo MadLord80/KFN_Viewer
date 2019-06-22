@@ -620,45 +620,21 @@ public class KFN
             decFile.Read(numOfResources, 0, numOfResources.Length);
             int resourcesCount = BitConverter.ToInt32(numOfResources, 0);
             byte[] noEncrypted = new byte[4];
-            int rCount = resourcesCount;
             int nOffset = 0;
             while (resourcesCount > 0)
             {
                 byte[] resourceNameLenght = new byte[4];
-                byte[] resourceType = new byte[4];
                 byte[] resourceLenght = new byte[4];
-                byte[] resourceEncryptedLenght = new byte[4];
-                byte[] resourceOffset = new byte[4];
-                byte[] resourceEncrypted = new byte[4];
 
                 decFile.Read(resourceNameLenght, 0, resourceNameLenght.Length);
                 byte[] resourceName = new byte[BitConverter.ToUInt32(resourceNameLenght, 0)];
-                decFile.Read(resourceName, 0, resourceName.Length);
-                decFile.Read(resourceType, 0, resourceType.Length);
+                decFile.Position += BitConverter.ToUInt32(resourceNameLenght, 0) + 4;
                 decFile.Read(resourceLenght, 0, resourceLenght.Length);
                 int rLength = BitConverter.ToInt32(resourceLenght, 0);
-                decFile.Read(resourceOffset, 0, resourceOffset.Length);
-                int rOffset = BitConverter.ToInt32(resourceOffset, 0);
-                if (nOffset != 0)
-                {
-                    decFile.Position -= 4;
-                    byte[] uOffset = BitConverter.GetBytes(rOffset + nOffset);
-                    decFile.Write(uOffset, 0, uOffset.Length);
-                }
-                decFile.Read(resourceEncryptedLenght, 0, resourceEncryptedLenght.Length);
-                int rEncLength = BitConverter.ToInt32(resourceEncryptedLenght, 0);
-                if (rLength != rEncLength)
-                {
-                    nOffset += rLength - rEncLength;
-                    decFile.Position -= 4;
-                    decFile.Write(resourceLenght, 0, resourceLenght.Length);
-                }
-                else
-                {
-                    nOffset = 0;
-                }
-                decFile.Read(resourceEncrypted, 0, resourceEncrypted.Length);
-                decFile.Position -= 4;
+                byte[] rOffset = BitConverter.GetBytes(nOffset);
+                decFile.Write(rOffset, 0, rOffset.Length);
+                nOffset += rLength;
+                decFile.Write(resourceLenght, 0, resourceLenght.Length);
                 decFile.Write(noEncrypted, 0, noEncrypted.Length);
 
                 resourcesCount--;
