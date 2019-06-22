@@ -13,6 +13,7 @@ TODO:
 - [ ] export to decrypted KFN only with lyric and audio
 - [ ] export to decrypted KFN with resources by choice
 - [x] delete ID3 lyric (USLT and SYLT)
+- [x] default encoding for lyric
 - [ ] lyric with '-' and some symbols without time markers (Maksyuha)
 - [ ] break words into syllables
 - [ ] Ария - Штиль: create LRC!!!

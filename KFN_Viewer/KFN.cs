@@ -11,7 +11,7 @@ using Mozilla.NUniversalCharDet;
 
 public class KFN
 {
-    private string fileName;
+    private string fullFileName;
     private string error;
     private Dictionary<string, string> properties = new Dictionary<string, string>();
     private List<string> unknownProperties = new List<string>();
@@ -59,7 +59,7 @@ public class KFN
 
     public KFN(string fileName)
     {
-        this.fileName = fileName;
+        this.fullFileName = fileName;
         this.ReadFile();
     }
 
@@ -68,9 +68,9 @@ public class KFN
         get { return this.error; }
     }
 
-    public string FileName
+    public string FullFileName
     {
-        get { return this.fileName; }
+        get { return this.fullFileName; }
     }
 
     public Dictionary<string, string> Properties
@@ -195,7 +195,7 @@ public class KFN
         this.unknownProperties.Clear();
         this.resources.Clear();
 
-        using (FileStream fs = new FileStream(this.fileName, FileMode.Open, FileAccess.Read))
+        using (FileStream fs = new FileStream(this.fullFileName, FileMode.Open, FileAccess.Read))
         {
             byte[] signature = new byte[4];
             fs.Read(signature, 0, signature.Length);
@@ -539,7 +539,7 @@ public class KFN
                 Array.Resize(ref timings, timings.Length + linetimes.Length);
                 Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
             }
-        }
+        }       
 
         if (timings.Length < words.Length - lines)
         {
@@ -550,6 +550,119 @@ public class KFN
         Dictionary<string[], int[]> TWords = new Dictionary<string[], int[]>();
         TWords.Add(words, timings);
         return TWords;
+    }
+
+    public void DecryptKFN()
+    {
+        this.error = null;
+
+        string sourceKFNFile = this.fullFileName + ".bak";
+        File.Copy(this.fullFileName, sourceKFNFile);
+
+        byte[] sourceFileHeader = new byte[this.endOfHeaderOffset];
+        using (FileStream fs = new FileStream(sourceKFNFile, FileMode.Open, FileAccess.ReadWrite))
+        {
+            fs.Read(sourceFileHeader, 0, sourceFileHeader.Length);
+        }
+
+        File.Delete(this.fullFileName);
+        using (FileStream decFile = new FileStream(this.fullFileName, FileMode.Create, FileAccess.ReadWrite))
+        {
+            decFile.Write(sourceFileHeader, 0, sourceFileHeader.Length);
+            decFile.Position = 0;
+
+            byte[] signature = new byte[4];
+            decFile.Read(signature, 0, signature.Length);
+
+            byte[] prop = new byte[5];
+            byte[] propValue = new byte[4];
+            int maxProps = 40;
+            while (maxProps > 0)
+            {
+                decFile.Read(prop, 0, prop.Length);
+                string propName = new string(Encoding.UTF8.GetChars(new ArraySegment<byte>(prop, 0, 4).ToArray()));
+                if (propName == "ENDH")
+                {
+                    decFile.Position += 4;
+                    break;
+                }
+                else if (propName == "FLID")
+                {
+                    decFile.Read(propValue, 0, propValue.Length);
+                    uint valueLength = BitConverter.ToUInt32(propValue, 0);
+                    byte[] zeroValue = new byte[valueLength];
+                    decFile.Write(zeroValue, 0, zeroValue.Length);
+
+                    maxProps--;
+                    continue;
+                }
+                if (prop[4] == 1)
+                {
+                    decFile.Position += 4;
+                }
+                else if (prop[4] == 2)
+                {
+                    decFile.Read(propValue, 0, propValue.Length);
+                    decFile.Position += BitConverter.ToInt32(propValue, 0);
+                }
+                maxProps--;
+            }
+
+            byte[] numOfResources = new byte[4];
+            decFile.Read(numOfResources, 0, numOfResources.Length);
+            int resourcesCount = BitConverter.ToInt32(numOfResources, 0);
+            byte[] noEncrypted = new byte[4];
+            int rCount = resourcesCount;
+            int nOffset = 0;
+            while (resourcesCount > 0)
+            {
+                byte[] resourceNameLenght = new byte[4];
+                byte[] resourceType = new byte[4];
+                byte[] resourceLenght = new byte[4];
+                byte[] resourceEncryptedLenght = new byte[4];
+                byte[] resourceOffset = new byte[4];
+                byte[] resourceEncrypted = new byte[4];
+
+                decFile.Read(resourceNameLenght, 0, resourceNameLenght.Length);
+                byte[] resourceName = new byte[BitConverter.ToUInt32(resourceNameLenght, 0)];
+                decFile.Read(resourceName, 0, resourceName.Length);
+                decFile.Read(resourceType, 0, resourceType.Length);
+                decFile.Read(resourceLenght, 0, resourceLenght.Length);
+                int rLength = BitConverter.ToInt32(resourceLenght, 0);
+                decFile.Read(resourceOffset, 0, resourceOffset.Length);
+                int rOffset = BitConverter.ToInt32(resourceOffset, 0);
+                if (nOffset != 0)
+                {
+                    decFile.Position -= 4;
+                    byte[] uOffset = BitConverter.GetBytes(rOffset + nOffset);
+                    decFile.Write(uOffset, 0, uOffset.Length);
+                }
+                decFile.Read(resourceEncryptedLenght, 0, resourceEncryptedLenght.Length);
+                int rEncLength = BitConverter.ToInt32(resourceEncryptedLenght, 0);
+                if (rLength != rEncLength)
+                {
+                    nOffset += rLength - rEncLength;
+                    decFile.Position -= 4;
+                    decFile.Write(resourceLenght, 0, resourceLenght.Length);
+                }
+                else
+                {
+                    nOffset = 0;
+                }
+                decFile.Read(resourceEncrypted, 0, resourceEncrypted.Length);
+                decFile.Position -= 4;
+                decFile.Write(noEncrypted, 0, noEncrypted.Length);
+
+                resourcesCount--;
+            }
+
+            KFN sourceKFN = new KFN(sourceKFNFile);
+            foreach (ResourceFile resource in sourceKFN.Resources.OrderBy(r => r.FileOffset))
+            {
+                byte[] rData = sourceKFN.GetDataFromResource(resource);
+                decFile.Write(rData, 0, rData.Length);
+            }
+        }
     }
 
     public string GetAudioSourceName()
@@ -570,7 +683,7 @@ public class KFN
     public byte[] GetDataFromResource(ResourceFile resource)
     {
         byte[] data = new byte[resource.EncLength];
-        using (FileStream fs = new FileStream(this.fileName, FileMode.Open, FileAccess.Read))
+        using (FileStream fs = new FileStream(this.fullFileName, FileMode.Open, FileAccess.Read))
         {
             fs.Position = this.endOfHeaderOffset + resource.FileOffset;
             fs.Read(data, 0, data.Length);

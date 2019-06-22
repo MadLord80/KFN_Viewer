@@ -20,6 +20,11 @@ namespace KFN_Viewer
         private string exportType;
         private ID3Tags ID3Class = new ID3Tags();
         private readonly FolderBrowserDialog FolderBrowserDialog = new FolderBrowserDialog();
+        private Dictionary<int, string> encodings = new Dictionary<int, string>
+        {
+            { 0, "ANSI (System default)" },
+            { 65001, "UTF-8 (KFN default)" }
+        };
 
         public ExportWindow(string exportType, KFN KFN)
         {
@@ -38,6 +43,8 @@ namespace KFN_Viewer
             titleLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
             artistSelect.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
             titleSelect.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            encLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            encSelect.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
 
             // TODO
             playVideoButton.IsEnabled = false;
@@ -48,7 +55,12 @@ namespace KFN_Viewer
             string audioSource = KFN.GetAudioSourceName();
             audioSelect.ItemsSource = audios;
             audioSelect.DisplayMemberPath = "FileName";
-            audioSelect.SelectedItem = audios.Where(a => a.FileName == audioSource).First();
+            audioSelect.SelectedItem = audios.Where(a => a.FileName == audioSource).FirstOrDefault();
+            if (audioSelect.SelectedItem == null)
+            {
+                System.Windows.MessageBox.Show("Can`t find audio source!");
+                return;
+            }
             if (audios.Count == 1) { audioSelect.IsEnabled = false; }
 
             // LYRICS
@@ -107,6 +119,10 @@ namespace KFN_Viewer
                 artistSelect.SelectedIndex = 0;
                 titleSelect.ItemsSource = titles;
                 titleSelect.SelectedIndex = 0;
+
+                encSelect.ItemsSource = this.encodings;
+                encSelect.DisplayMemberPath = "Value";
+                encSelect.SelectedIndex = 0;
             }
 
             // VIDEO
@@ -205,7 +221,7 @@ namespace KFN_Viewer
             string lyric = lyricPreview.Text;
             if (lyric.Length == 0 || lyric.Contains("Can`t convert lyric from Song.ini")) { return; }
             
-            FileInfo kfnFile = new FileInfo(KFN.FileName);
+            FileInfo kfnFile = new FileInfo(KFN.FullFileName);
             FolderBrowserDialog.SelectedPath = kfnFile.DirectoryName;
             if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
@@ -253,7 +269,10 @@ namespace KFN_Viewer
                     {
                         fs.Write(mp3Data, 0, mp3Data.Length);
                     }
-                    byte[] lrcData = Encoding.UTF8.GetBytes(lyric);
+
+                    int encCode = ((KeyValuePair<int, string>)encSelect.SelectedItem).Key;
+                    Encoding lrcEnc = (encCode == 0) ? Encoding.Default : Encoding.GetEncoding(encCode);
+                    byte[] lrcData = lrcEnc.GetBytes(lyric);
                     using (FileStream fs = new FileStream(exportFolder + "\\" + lrcFileName, FileMode.Create, FileAccess.Write))
                     {
                         fs.Write(lrcData, 0, lrcData.Length);

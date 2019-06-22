@@ -51,7 +51,7 @@ namespace KFN_Viewer
             viewConfigButton.IsEnabled = false;
             toEMZMenu.IsEnabled = false;
             toMP3LRCMenu.IsEnabled = false;
-            toKFNMenu.IsEnabled = false;
+            //toKFNMenu.IsEnabled = false;
             ResourceViewInit();
         }
 
@@ -141,7 +141,7 @@ namespace KFN_Viewer
                     System.Windows.MessageBox.Show(KFN.isError);
                     return;
                 }
-                MainWindowElement.Title = this.windowTitle + " - " + KFN.FileName;
+                MainWindowElement.Title = this.windowTitle + " - " + KFN.FullFileName;
                 this.UpdateKFN();
                 viewConfigButton.IsEnabled = true;
                 toEMZMenu.IsEnabled = true;
@@ -215,7 +215,7 @@ namespace KFN_Viewer
         {
             KFN.ResourceFile resource = resourcesView.SelectedItem as KFN.ResourceFile;
 
-            FolderBrowserDialog.SelectedPath = new FileInfo(KFN.FileName).DirectoryName;
+            FolderBrowserDialog.SelectedPath = new FileInfo(KFN.FullFileName).DirectoryName;
             if (FolderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 string exportFolder = FolderBrowserDialog.SelectedPath;
@@ -286,6 +286,20 @@ namespace KFN_Viewer
 
         private void ToKFNMenu_Click(object sender, RoutedEventArgs e)
         {
+            KFN.DecryptKFN();
+            if (KFN.isError != null)
+            {
+                System.Windows.MessageBox.Show(KFN.isError);
+                return;
+            }
+            System.Windows.MessageBox.Show("Done!");
+            KFN = new KFN(KFN.FullFileName);
+            if (KFN.isError != null)
+            {
+                System.Windows.MessageBox.Show(KFN.isError);
+                return;
+            }
+            this.UpdateKFN();
             //just decrypted
             //only with audio and lyric(and modified ? Song.ini, +-decrypt)
             //select lyric
