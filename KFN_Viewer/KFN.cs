@@ -17,6 +17,7 @@ public class KFN
     private List<string> unknownProperties = new List<string>();
     private List<ResourceFile> resources = new List<ResourceFile>();
     private long endOfHeaderOffset;
+    private long endOfPropsOffset;
     // US-ASCII
     private int resourceNamesEncodingAuto = 20127;
     private string autoDetectEncoding;
@@ -104,6 +105,12 @@ public class KFN
         int ftype = BitConverter.ToInt32(type, 0);
         if (fileTypes.ContainsKey(ftype)) { return fileTypes[ftype]; }
         return "Unknown (" + ftype + ")";
+    }
+
+    private int GetFileTypeId(string type)
+    {
+        KeyValuePair<int, string> ftype = this.fileTypes.Where(ft => ft.Value == type).FirstOrDefault(); 
+        return (ftype.Value == null) ? -1 : ftype.Key;
     }
 
     private class FileBytesAbstraction : TagLib.File.IFileAbstraction
@@ -269,6 +276,7 @@ public class KFN
                 }
                 maxProps--;
             }
+            this.endOfPropsOffset = fs.Position;
 
             byte[] numOfResources = new byte[4];
             fs.Read(numOfResources, 0, numOfResources.Length);
@@ -552,6 +560,57 @@ public class KFN
         return TWords;
     }
 
+    public void ChangeKFN(List<ResourceFile> resources)
+    {
+        this.error = null;
+
+        string sourceKFNFile = this.fullFileName + ".bak";
+        File.Copy(this.fullFileName, sourceKFNFile);
+
+        byte[] sourcePropHeader = new byte[this.endOfPropsOffset];
+        using (FileStream fs = new FileStream(sourceKFNFile, FileMode.Open, FileAccess.ReadWrite))
+        {
+            fs.Read(sourcePropHeader, 0, sourcePropHeader.Length);
+        }
+
+        File.Delete(this.fullFileName);
+        using (FileStream newFile = new FileStream(this.fullFileName, FileMode.Create, FileAccess.ReadWrite))
+        {
+            newFile.Write(sourcePropHeader, 0, sourcePropHeader.Length);
+
+            byte[] numOfResources = BitConverter.GetBytes(resources.Count);
+            newFile.Write(numOfResources, 0, numOfResources.Length);
+            int nOffset = 0;
+            foreach (ResourceFile resource in resources.OrderBy(r => r.FileOffset))
+            {
+                byte[] resourceNameLenght = BitConverter.GetBytes(resource.FileName.Length);
+                byte[] resourceLenght = BitConverter.GetBytes(resource.FileLength);
+                byte[] resourceEncryptedLenght = BitConverter.GetBytes(resource.EncLength);
+                int encrypted = (resource.IsEncrypted) ? 1 : 0;
+                byte[] resourceEncrypted = BitConverter.GetBytes(encrypted);
+
+                newFile.Write(resourceNameLenght, 0, resourceNameLenght.Length);
+                byte[] resourceName = Encoding.GetEncoding(this.resourceNamesEncodingAuto).GetBytes(resource.FileName);
+                newFile.Write(resourceName, 0, resourceName.Length);
+                byte[] type = BitConverter.GetBytes(this.GetFileTypeId(resource.FileType));
+                newFile.Write(type, 0, type.Length);
+                newFile.Write(resourceLenght, 0, resourceLenght.Length);
+                byte[] rOffset = BitConverter.GetBytes(nOffset);
+                newFile.Write(rOffset, 0, rOffset.Length);
+                nOffset += resource.EncLength;
+                newFile.Write(resourceEncryptedLenght, 0, resourceEncryptedLenght.Length);
+                newFile.Write(resourceEncrypted, 0, resourceEncrypted.Length);
+            }
+
+            KFN sourceKFN = new KFN(sourceKFNFile);
+            foreach (ResourceFile resource in resources.OrderBy(r => r.FileOffset))
+            {
+                byte[] rData = sourceKFN.GetDataFromResource(resource, false);
+                newFile.Write(rData, 0, rData.Length);
+            }
+        }
+    }
+
     public void DecryptKFN()
     {
         this.error = null;
@@ -569,10 +628,7 @@ public class KFN
         using (FileStream decFile = new FileStream(this.fullFileName, FileMode.Create, FileAccess.ReadWrite))
         {
             decFile.Write(sourceFileHeader, 0, sourceFileHeader.Length);
-            decFile.Position = 0;
-
-            byte[] signature = new byte[4];
-            decFile.Read(signature, 0, signature.Length);
+            decFile.Position = 4;
 
             byte[] prop = new byte[5];
             byte[] propValue = new byte[4];
@@ -664,7 +720,7 @@ public class KFN
         return (videos.Length == 1) ? videos[0] : null;
     }
 
-    public byte[] GetDataFromResource(ResourceFile resource)
+    public byte[] GetDataFromResource(ResourceFile resource, bool needDecrypt = true)
     {
         byte[] data = new byte[resource.EncLength];
         using (FileStream fs = new FileStream(this.fullFileName, FileMode.Open, FileAccess.Read))
@@ -673,7 +729,7 @@ public class KFN
             fs.Read(data, 0, data.Length);
         }
 
-        if (resource.IsEncrypted)
+        if (resource.IsEncrypted && needDecrypt)
         {
             byte[] Key = Enumerable.Range(0, this.properties["AES-ECB-128 Key"].Length)
                 .Where(x => x % 2 == 0)
