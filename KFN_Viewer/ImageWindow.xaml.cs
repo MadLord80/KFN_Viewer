@@ -17,6 +17,8 @@ namespace KFN_Viewer
             BitmapImage picture = LoadImage(image);
             ImageElement.Source = picture;
             ImageWindowElement.Title += " (" + picture.Width + "x" + picture.Height + ")";
+            ImageWindowElement.Width = picture.PixelWidth;
+            ImageWindowElement.Height = picture.PixelHeight;
         }
 
         private static BitmapImage LoadImage(byte[] imageData)

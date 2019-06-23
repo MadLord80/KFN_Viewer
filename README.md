@@ -10,9 +10,10 @@ TODO:
 - [x] use edited ELYR in EMZ
 - [x] buttons for create EMZ to main window (if possible)
 - [x] add size of resource to view
-- [ ] export to decrypted KFN only with lyric and audio
-- [ ] export to decrypted KFN with resources by choice
-- [ ] add BOM to LRC
+- [x] export to decrypted KFN only with lyric and audio
+- [x] export to decrypted KFN with resources by choice
+- [x] add BOM to LRC
+- [x] resize image window to image aspect
 - [x] delete ID3 lyric (USLT and SYLT)
 - [x] default encoding for lyric
 - [ ] lyric with '-' and some symbols without time markers (Maksyuha)

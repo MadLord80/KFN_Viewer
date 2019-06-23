@@ -18,7 +18,6 @@ namespace KFN_Viewer
         private string windowTitle = "KFN Viewer";
         private KFN KFN;
         private SongINI sINI;
-        private bool needDecryptKFN = true;
 
         private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
         { { 0, "Use auto detect" } };
@@ -263,20 +262,8 @@ namespace KFN_Viewer
         }
 
         private void ToKFNMenu_Click(object sender, RoutedEventArgs e)
-        {
-            List<KFN.ResourceFile> rs = new List<KFN.ResourceFile>();
-            string audioSource = KFN.GetAudioSourceName();
-            KFN.ResourceFile audio = KFN.Resources.Where(r => r.FileName == audioSource).First();
-            KFN.ResourceFile config = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
-            rs.Add(audio);
-            rs.Add(config);
-            KFN.ChangeKFN(rs);
-            //KFN.DecryptKFN();
-            //if (KFN.isError != null)
-            //{
-            //    System.Windows.MessageBox.Show(KFN.isError);
-            //    return;
-            //}
+        {            
+            KFN.ChangeKFN(KFN.Resources.Where(r => r.IsExported == true).ToList(), (bool)decryptKFN.IsChecked);
             System.Windows.MessageBox.Show("Done!");
             KFN = new KFN(KFN.FullFileName);
             if (KFN.isError != null)
@@ -285,21 +272,12 @@ namespace KFN_Viewer
                 return;
             }
             this.UpdateKFN();
-
-            //just decrypted
-            //only with audio and lyric(and modified ? Song.ini, +-decrypt)
-            //select lyric
         }
 
         private void SelectAllResources_Click(object sender, RoutedEventArgs e)
         {
             KFN.Resources.ForEach(r => r.IsExported = (bool)selectAllResources.IsChecked);
             resourcesView.Items.Refresh();
-        }
-
-        private void DecryptKFN_Click(object sender, RoutedEventArgs e)
-        {
-            this.needDecryptKFN = (bool)decryptKFN.IsChecked;
         }
 
         // karaore text

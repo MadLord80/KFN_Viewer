@@ -7,7 +7,8 @@
         mc:Ignorable="d"
         Height="{Binding SystemParameters.PrimaryScreenHeight}" 
         Width="{Binding SystemParameters.PrimaryScreenWidth}"
-        Title="Image:  ">
+        Title="Image:  "
+        Style="{StaticResource {x:Type Window}}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>

@@ -273,8 +273,10 @@ namespace KFN_Viewer
                     int encCode = ((KeyValuePair<int, string>)encSelect.SelectedItem).Key;
                     Encoding lrcEnc = (encCode == 0) ? Encoding.Default : Encoding.GetEncoding(encCode);
                     byte[] lrcData = lrcEnc.GetBytes(lyric);
+                    byte[] bom = lrcEnc.GetPreamble();
                     using (FileStream fs = new FileStream(exportFolder + "\\" + lrcFileName, FileMode.Create, FileAccess.Write))
                     {
+                        fs.Write(bom, 0, bom.Length);
                         fs.Write(lrcData, 0, lrcData.Length);
                     }
                     System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + mp3FileName);

@@ -574,7 +574,7 @@ public class KFN
         return TWords;
     }
 
-    public void ChangeKFN(List<ResourceFile> resources)
+    public void ChangeKFN(List<ResourceFile> resources, bool needDecrypt = false)
     {
         this.error = null;
 
@@ -592,6 +592,53 @@ public class KFN
         {
             newFile.Write(sourcePropHeader, 0, sourcePropHeader.Length);
 
+            if (needDecrypt)
+            {
+                newFile.Position = 4;
+
+                byte[] prop = new byte[5];
+                byte[] propValue = new byte[4];
+                int maxProps = 40;
+                while (maxProps > 0)
+                {
+                    newFile.Read(prop, 0, prop.Length);
+                    string propName = new string(Encoding.UTF8.GetChars(new ArraySegment<byte>(prop, 0, 4).ToArray()));
+                    if (propName == "ENDH")
+                    {
+                        newFile.Position += 4;
+                        break;
+                    }
+                    else if (propName == "FLID")
+                    {
+                        newFile.Read(propValue, 0, propValue.Length);
+                        uint valueLength = BitConverter.ToUInt32(propValue, 0);
+                        byte[] zeroValue = new byte[valueLength];
+                        newFile.Write(zeroValue, 0, zeroValue.Length);
+
+                        maxProps--;
+                        continue;
+                    }
+                    else if (propName == "RGHT")
+                    {
+                        byte[] zeroValue = new byte[4];
+                        newFile.Write(zeroValue, 0, zeroValue.Length);
+
+                        maxProps--;
+                        continue;
+                    }
+                    if (prop[4] == 1)
+                    {
+                        newFile.Position += 4;
+                    }
+                    else if (prop[4] == 2)
+                    {
+                        newFile.Read(propValue, 0, propValue.Length);
+                        newFile.Position += BitConverter.ToInt32(propValue, 0);
+                    }
+                    maxProps--;
+                }
+            }
+
             byte[] numOfResources = BitConverter.GetBytes(resources.Count);
             newFile.Write(numOfResources, 0, numOfResources.Length);
             int nOffset = 0;
@@ -599,9 +646,13 @@ public class KFN
             {
                 byte[] resourceNameLenght = BitConverter.GetBytes(resource.FileName.Length);
                 byte[] resourceLenght = BitConverter.GetBytes(resource.FileLength);
-                byte[] resourceEncryptedLenght = BitConverter.GetBytes(resource.EncLength);
+                byte[] resourceEncryptedLenght = (needDecrypt)
+                    ? resourceLenght
+                    : BitConverter.GetBytes(resource.EncLength);
                 int encrypted = (resource.IsEncrypted) ? 1 : 0;
-                byte[] resourceEncrypted = BitConverter.GetBytes(encrypted);
+                byte[] resourceEncrypted = (needDecrypt)
+                    ? new byte[4]
+                    : BitConverter.GetBytes(encrypted);
 
                 newFile.Write(resourceNameLenght, 0, resourceNameLenght.Length);
                 byte[] resourceName = Encoding.GetEncoding(this.resourceNamesEncodingAuto).GetBytes(resource.FileName);
@@ -611,7 +662,7 @@ public class KFN
                 newFile.Write(resourceLenght, 0, resourceLenght.Length);
                 byte[] rOffset = BitConverter.GetBytes(nOffset);
                 newFile.Write(rOffset, 0, rOffset.Length);
-                nOffset += resource.EncLength;
+                nOffset += (needDecrypt) ? resource.FileLength : resource.EncLength;
                 newFile.Write(resourceEncryptedLenght, 0, resourceEncryptedLenght.Length);
                 newFile.Write(resourceEncrypted, 0, resourceEncrypted.Length);
             }
@@ -619,102 +670,8 @@ public class KFN
             KFN sourceKFN = new KFN(sourceKFNFile);
             foreach (ResourceFile resource in resources.OrderBy(r => r.FileOffset))
             {
-                byte[] rData = sourceKFN.GetDataFromResource(resource, false);
+                byte[] rData = sourceKFN.GetDataFromResource(resource, needDecrypt);
                 newFile.Write(rData, 0, rData.Length);
-            }
-        }
-    }
-
-    public void DecryptKFN()
-    {
-        this.error = null;
-
-        string sourceKFNFile = this.fullFileName + ".bak";
-        File.Copy(this.fullFileName, sourceKFNFile);
-
-        byte[] sourceFileHeader = new byte[this.endOfHeaderOffset];
-        using (FileStream fs = new FileStream(sourceKFNFile, FileMode.Open, FileAccess.ReadWrite))
-        {
-            fs.Read(sourceFileHeader, 0, sourceFileHeader.Length);
-        }
-
-        File.Delete(this.fullFileName);
-        using (FileStream decFile = new FileStream(this.fullFileName, FileMode.Create, FileAccess.ReadWrite))
-        {
-            decFile.Write(sourceFileHeader, 0, sourceFileHeader.Length);
-            decFile.Position = 4;
-
-            byte[] prop = new byte[5];
-            byte[] propValue = new byte[4];
-            int maxProps = 40;
-            while (maxProps > 0)
-            {
-                decFile.Read(prop, 0, prop.Length);
-                string propName = new string(Encoding.UTF8.GetChars(new ArraySegment<byte>(prop, 0, 4).ToArray()));
-                if (propName == "ENDH")
-                {
-                    decFile.Position += 4;
-                    break;
-                }
-                else if (propName == "FLID")
-                {
-                    decFile.Read(propValue, 0, propValue.Length);
-                    uint valueLength = BitConverter.ToUInt32(propValue, 0);
-                    byte[] zeroValue = new byte[valueLength];
-                    decFile.Write(zeroValue, 0, zeroValue.Length);
-
-                    maxProps--;
-                    continue;
-                }
-                else if (propName == "RGHT")
-                {
-                    byte[] zeroValue = new byte[4];
-                    decFile.Write(zeroValue, 0, zeroValue.Length);
-
-                    maxProps--;
-                    continue;
-                }
-                if (prop[4] == 1)
-                {
-                    decFile.Position += 4;
-                }
-                else if (prop[4] == 2)
-                {
-                    decFile.Read(propValue, 0, propValue.Length);
-                    decFile.Position += BitConverter.ToInt32(propValue, 0);
-                }
-                maxProps--;
-            }
-
-            byte[] numOfResources = new byte[4];
-            decFile.Read(numOfResources, 0, numOfResources.Length);
-            int resourcesCount = BitConverter.ToInt32(numOfResources, 0);
-            byte[] noEncrypted = new byte[4];
-            int nOffset = 0;
-            while (resourcesCount > 0)
-            {
-                byte[] resourceNameLenght = new byte[4];
-                byte[] resourceLenght = new byte[4];
-
-                decFile.Read(resourceNameLenght, 0, resourceNameLenght.Length);
-                byte[] resourceName = new byte[BitConverter.ToUInt32(resourceNameLenght, 0)];
-                decFile.Position += BitConverter.ToUInt32(resourceNameLenght, 0) + 4;
-                decFile.Read(resourceLenght, 0, resourceLenght.Length);
-                int rLength = BitConverter.ToInt32(resourceLenght, 0);
-                byte[] rOffset = BitConverter.GetBytes(nOffset);
-                decFile.Write(rOffset, 0, rOffset.Length);
-                nOffset += rLength;
-                decFile.Write(resourceLenght, 0, resourceLenght.Length);
-                decFile.Write(noEncrypted, 0, noEncrypted.Length);
-
-                resourcesCount--;
-            }
-
-            KFN sourceKFN = new KFN(sourceKFNFile);
-            foreach (ResourceFile resource in sourceKFN.Resources.OrderBy(r => r.FileOffset))
-            {
-                byte[] rData = sourceKFN.GetDataFromResource(resource);
-                decFile.Write(rData, 0, rData.Length);
             }
         }
     }

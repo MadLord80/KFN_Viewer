@@ -48,11 +48,11 @@
                 <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}">
                     <GridViewColumn Width="30">
                         <GridViewColumn.Header>
-                            <CheckBox ToolTip="Select for export" x:Name="selectAllResources" IsChecked="False" HorizontalAlignment="Center" Margin="5,0,0,0" Click="SelectAllResources_Click"/>
+                            <CheckBox ToolTip="Select all for export to KFN" x:Name="selectAllResources" IsChecked="False" HorizontalAlignment="Center" Margin="5,0,0,0" Click="SelectAllResources_Click"/>
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding IsExported}" HorizontalAlignment="Center"/>
+                                <CheckBox ToolTip="Select resource for export to KFN" IsChecked="{Binding IsExported}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -81,7 +81,7 @@
             <MenuItem Header="Tools" Height="30" Width="55" IsEnabled="False" FontSize="14"/>
             <MenuItem x:Name="resEncMenuItem" Header="Resource encoding" Height="30" Width="133" FontSize="14"/>
         </Menu>
-        <CheckBox x:Name="decryptKFN" Content="Decrypt KFN while export" Grid.Row="1" VerticalAlignment="Center" Click="DecryptKFN_Click"/>
+        <CheckBox x:Name="decryptKFN" Content="Decrypt KFN while export to KFN" Grid.Row="1" VerticalAlignment="Center"/>
 
     </Grid>
 </Window>
