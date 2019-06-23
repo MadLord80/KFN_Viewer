@@ -18,6 +18,7 @@ namespace KFN_Viewer
         private string windowTitle = "KFN Viewer";
         private KFN KFN;
         private SongINI sINI;
+        private bool needDecryptKFN = true;
 
         private readonly Dictionary<int, string> encodings = new Dictionary<int, string>
         { { 0, "Use auto detect" } };
@@ -51,7 +52,9 @@ namespace KFN_Viewer
             viewConfigButton.IsEnabled = false;
             toEMZMenu.IsEnabled = false;
             toMP3LRCMenu.IsEnabled = false;
-            //toKFNMenu.IsEnabled = false;
+            toKFNMenu.IsEnabled = false;
+            decryptKFN.IsEnabled = false;
+            decryptKFN.IsChecked = true;
             ResourceViewInit();
         }
 
@@ -73,35 +76,6 @@ namespace KFN_Viewer
 
         private void ResourceViewInit()
         {
-            GridView resourceGrid = new GridView
-            {
-                ColumnHeaderContainerStyle =
-                    System.Windows.Application.Current.Resources["GridViewColumnHeaderStyle"] as Style
-            };
-            resourceGrid.Columns.Add(new GridViewColumn()
-            {
-                Header = "AES Enc",
-                Width = 60,
-                DisplayMemberBinding = new System.Windows.Data.Binding("IsEncrypted")
-            });
-            resourceGrid.Columns.Add(new GridViewColumn()
-            {
-                Header = "Type",
-                DisplayMemberBinding = new System.Windows.Data.Binding("FileType")
-            });
-            resourceGrid.Columns.Add(new GridViewColumn()
-            {
-                Header = "Name",
-                DisplayMemberBinding = new System.Windows.Data.Binding("FileName")
-            });
-            resourceGrid.Columns.Add(new GridViewColumn()
-            {
-                Header = "Size",
-                DisplayMemberBinding = new System.Windows.Data.Binding("FileSize")
-            });
-
-            resourcesView.View = resourceGrid;
-
             System.Windows.Controls.ContextMenu context = new System.Windows.Controls.ContextMenu();
             System.Windows.Controls.MenuItem exportItem = new System.Windows.Controls.MenuItem() { Header = "Export" };
             exportItem.Click += ExportResourceButtonClick;
@@ -146,6 +120,10 @@ namespace KFN_Viewer
                 viewConfigButton.IsEnabled = true;
                 toEMZMenu.IsEnabled = true;
                 toMP3LRCMenu.IsEnabled = true;
+                toKFNMenu.IsEnabled = true;
+
+                KFN.ResourceFile encResource = KFN.Resources.Where(r => r.IsEncrypted == true).FirstOrDefault();
+                if (encResource != null) { decryptKFN.IsEnabled = true; }
             }
         }
 
@@ -311,6 +289,17 @@ namespace KFN_Viewer
             //just decrypted
             //only with audio and lyric(and modified ? Song.ini, +-decrypt)
             //select lyric
+        }
+
+        private void SelectAllResources_Click(object sender, RoutedEventArgs e)
+        {
+            KFN.Resources.ForEach(r => r.IsExported = (bool)selectAllResources.IsChecked);
+            resourcesView.Items.Refresh();
+        }
+
+        private void DecryptKFN_Click(object sender, RoutedEventArgs e)
+        {
+            this.needDecryptKFN = (bool)decryptKFN.IsChecked;
         }
 
         // karaore text

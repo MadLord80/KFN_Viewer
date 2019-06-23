@@ -12,6 +12,7 @@ TODO:
 - [x] add size of resource to view
 - [ ] export to decrypted KFN only with lyric and audio
 - [ ] export to decrypted KFN with resources by choice
+- [ ] add BOM to LRC
 - [x] delete ID3 lyric (USLT and SYLT)
 - [x] default encoding for lyric
 - [ ] lyric with '-' and some symbols without time markers (Maksyuha)

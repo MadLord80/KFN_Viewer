@@ -144,6 +144,9 @@ public class KFN
         private int Offset;
         private bool Encrypted;
 
+        private bool Exported;
+        private bool IsAudioSource;
+
         public string FileType
         {
             get { return this.Type; }
@@ -183,8 +186,17 @@ public class KFN
         {
             get { return this.Encrypted; }
         }
+        public bool IsExported
+        {
+            get {
+                return (this.FileType == "Config" || this.IsAudioSource) ? true : this.Exported;
+            }
+            set {
+                if (this.FileType != "Config" && !this.IsAudioSource) { this.Exported = value; }
+            }
+        }
 
-        public ResourceFile(string type, string name, int enclength, int length, int offset, bool encrypted)
+        public ResourceFile(string type, string name, int enclength, int length, int offset, bool encrypted, bool aSource = false)
         {
             this.Type = type;
             this.Name = name;
@@ -192,6 +204,7 @@ public class KFN
             this.Length = length;
             this.Offset = offset;
             this.Encrypted = encrypted;
+            this.IsAudioSource = aSource;
         }
     }
 
@@ -334,7 +347,8 @@ public class KFN
                     BitConverter.ToInt32(resourceEncryptedLenght, 0),
                     BitConverter.ToInt32(resourceLenght, 0),
                     BitConverter.ToInt32(resourceOffset, 0),
-                    (encrypted == 0) ? false : true
+                    (encrypted == 0) ? false : true,
+                    (fName == this.GetAudioSourceName()) ? true : false
                 ));
 
                 resourcesCount--;
