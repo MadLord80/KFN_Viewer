@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.IO.Compression;
 
 using Mozilla.NUniversalCharDet;
+using IniParser.Model;
 
 public class KFN
 {
@@ -109,7 +110,7 @@ public class KFN
 
     private int GetFileTypeId(string type)
     {
-        KeyValuePair<int, string> ftype = this.fileTypes.Where(ft => ft.Value == type).FirstOrDefault(); 
+        KeyValuePair<int, string> ftype = this.fileTypes.Where(ft => ft.Value == type).FirstOrDefault();
         return (ftype.Value == null) ? -1 : ftype.Key;
     }
 
@@ -188,10 +189,12 @@ public class KFN
         }
         public bool IsExported
         {
-            get {
+            get
+            {
                 return (this.FileType == "Config" || this.IsAudioSource) ? true : this.Exported;
             }
-            set {
+            set
+            {
                 if (this.FileType != "Config" && !this.IsAudioSource) { this.Exported = value; }
             }
         }
@@ -561,7 +564,7 @@ public class KFN
                 Array.Resize(ref timings, timings.Length + linetimes.Length);
                 Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
             }
-        }       
+        }
 
         if (timings.Length < words.Length - lines)
         {
@@ -671,6 +674,44 @@ public class KFN
             foreach (ResourceFile resource in resources.OrderBy(r => r.FileOffset))
             {
                 byte[] rData = sourceKFN.GetDataFromResource(resource, needDecrypt);
+                if (resource.FileType == "Config")
+                {
+                    string iniText = new string(Encoding.UTF8.GetChars(rData));
+                    var parser = new IniParser.Parser.IniDataParser();
+                    IniData iniData = parser.Parse(iniText);
+                    string[] saveProps = {
+                        "title", "artist", "album",
+                        "composer", "year", "track",
+                        "genreid", "copyright", "comment",
+                        "source",
+                        // lock
+                        //"effectcount",
+                        "languageid", "diffmen",
+                        "diffwomen", "kfntype", "karaokeversion",
+                        "vocalguide", "karafunization",
+                        // fail
+                        //"infoscreenbmp",
+                        //"globalshift",
+                        //"vendor",
+
+                        "properties",
+                        "noedit"
+                    };
+                    Dictionary<string, string> origProps = new Dictionary<string, string>();
+                    foreach (string prop in saveProps)
+                    {
+                        if (iniData["general"][prop] != null)
+                        {
+                            origProps.Add(prop, iniData["general"][prop]);
+                        }
+                    }
+                    iniData["general"].RemoveAllKeys();
+                    foreach (KeyValuePair<string, string> pair in origProps)
+                    {
+                        iniData["general"].AddKey(pair.Key, pair.Value);
+                    }
+                    rData = Encoding.UTF8.GetBytes(iniData.ToString());
+                }
                 newFile.Write(rData, 0, rData.Length);
             }
         }
