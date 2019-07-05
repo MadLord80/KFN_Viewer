@@ -645,6 +645,7 @@ public class KFN
             byte[] numOfResources = BitConverter.GetBytes(resources.Count);
             newFile.Write(numOfResources, 0, numOfResources.Length);
             int nOffset = 0;
+            long configLengthOffset = 0;
             foreach (ResourceFile resource in resources.OrderBy(r => r.FileOffset))
             {
                 byte[] resourceNameLenght = BitConverter.GetBytes(resource.FileName.Length);
@@ -662,6 +663,7 @@ public class KFN
                 newFile.Write(resourceName, 0, resourceName.Length);
                 byte[] type = BitConverter.GetBytes(this.GetFileTypeId(resource.FileType));
                 newFile.Write(type, 0, type.Length);
+                if (resource.FileType == "Config") { configLengthOffset = newFile.Position; }
                 newFile.Write(resourceLenght, 0, resourceLenght.Length);
                 byte[] rOffset = BitConverter.GetBytes(nOffset);
                 newFile.Write(rOffset, 0, rOffset.Length);
@@ -674,8 +676,10 @@ public class KFN
             foreach (ResourceFile resource in resources.OrderBy(r => r.FileOffset))
             {
                 byte[] rData = sourceKFN.GetDataFromResource(resource, needDecrypt);
-                if (resource.FileType == "Config")
+                if (resource.FileType == "Config" && needDecrypt)
                 {
+                    long currPos = newFile.Position;
+
                     string iniText = new string(Encoding.UTF8.GetChars(rData));
                     var parser = new IniParser.Parser.IniDataParser();
                     IniData iniData = parser.Parse(iniText);
@@ -685,13 +689,12 @@ public class KFN
                         "genreid", "copyright", "comment",
                         "source",
                         // lock
-                        //"effectcount",
+                        "effectcount",
                         "languageid", "diffmen",
                         "diffwomen", "kfntype", "karaokeversion",
                         "vocalguide", "karafunization",
-                        // fail
-                        //"infoscreenbmp",
-                        //"globalshift",
+                        "infoscreenbmp",
+                        "globalshift",
                         //"vendor",
 
                         "properties",
@@ -710,7 +713,27 @@ public class KFN
                     {
                         iniData["general"].AddKey(pair.Key, pair.Value);
                     }
+
+                    //string[] delBlockParams = { "enabled", "locked" };
+                    //foreach (SectionData block in iniData.Sections)
+                    //{
+                    //    foreach (string param in delBlockParams)
+                    //    {
+                    //        if (iniData[block.SectionName][param] != null)
+                    //        {
+                    //            iniData[block.SectionName].RemoveKey(param);
+                    //        }
+                    //    }
+                    //}
+
                     rData = Encoding.UTF8.GetBytes(iniData.ToString());
+                    byte[] rDataLength = BitConverter.GetBytes(rData.Length);
+
+                    newFile.Position = configLengthOffset;
+                    newFile.Write(rDataLength, 0, 4);
+                    newFile.Position += 4;
+                    newFile.Write(rDataLength, 0, 4);
+                    newFile.Position = currPos;
                 }
                 newFile.Write(rData, 0, rData.Length);
             }
