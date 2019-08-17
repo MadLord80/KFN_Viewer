@@ -561,12 +561,30 @@ public class KFN
                 Array.Resize(ref timings, timings.Length + linetimes.Length);
                 Array.Copy(linetimes, 0, timings, timings.Length - linetimes.Length, linetimes.Length);
             }
-        }       
+        }
 
+        // бывает, что не весь текст имеет временные метки
+        // поэтому отсекаем текст в конце за пределами временных меток
         if (timings.Length < words.Length - lines)
-        {
-            this.error = "Fail convert: words - " + words.Length + ", timings - " + timings.Length;
-            return null;
+        { 
+            int cutLines = 0; int cWords = 0;
+            for (int i = 0; i < words.Length; i++)
+            {
+                if (cWords > timings.Length)
+                {
+                    break;
+                }
+                else if (words[i] == null)
+                {
+                    cutLines++;
+                }
+                else
+                {
+                    cWords++;
+                }
+            }
+            int cutIndex = timings.Length + cutLines;
+            Array.Resize(ref words, cutIndex);
         }
 
         Dictionary<string[], int[]> TWords = new Dictionary<string[], int[]>();
