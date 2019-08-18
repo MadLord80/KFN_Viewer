@@ -16,6 +16,6 @@ TODO:
 - [x] resize image window to image aspect
 - [x] delete ID3 lyric (USLT and SYLT)
 - [x] default encoding for lyric
-- [ ] lyric with '-' and some symbols without time markers (Maksyuha)
+- [x] lyric with '-' and some symbols without time markers (Maksyuha)
 - [ ] break words into syllables
 - [ ] Ария - Штиль: create LRC!!!
