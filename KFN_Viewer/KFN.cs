@@ -18,6 +18,8 @@ public class KFN
     private List<ResourceFile> resources = new List<ResourceFile>();
     private long endOfHeaderOffset;
     private long endOfPropsOffset;
+    // for convert lyric
+    private int iniVersion = 2;
     // US-ASCII
     private int resourceNamesEncodingAuto = 20127;
     private string autoDetectEncoding;
@@ -385,7 +387,7 @@ public class KFN
         FileInfo sourceFile = new FileInfo(audioFile);
         string elyrFileName = sourceFile.Name.Substring(0, sourceFile.Name.Length - sourceFile.Extension.Length) + ".elyr";
 
-        string elyrText = (Regex.IsMatch(iniOrElyrText, @"[\r\n]Sync[0-9]+=[0-9,]+"))
+        string elyrText = (Regex.IsMatch(iniOrElyrText, @"[\r\n][Ss]ync[0-9]+=[0-9,]+"))
             ? this.INIToELYR(iniOrElyrText)
             : iniOrElyrText;
         if (elyrText == null)
@@ -453,10 +455,23 @@ public class KFN
         int timeIndex = 1;
         int timing = timings[0] * 10;
         string elyrText = timing + ":" + timing + "=\\" + words[0] + "\r\n";
+
         for (int i = 1; i < words.Length; i++)
         {
+            if (i == words.Length - 1 && (words[i] == "_" || words[i] == null)) { break; }
             if (!newLine)
             {
+                if (this.iniVersion == 1)
+                {
+                    if (words[i] == null && timeIndex < timings.Length - 1) { timeIndex++; }
+                    if (i < words.Length - 1 && timeIndex < timings.Length - 1 && words[i + 1] == "_")
+                    {
+                        timeIndex++;
+                        i++;
+                        words[i] = null;
+                    }
+                }
+
                 timing = timings[timeIndex] * 10;
                 elyrText += timing + ":" + timing + "=";
             }
@@ -470,10 +485,11 @@ public class KFN
             else
             {
                 elyrText += "\\";
-                newLine = true;
+                newLine = true;                
             }
         }
-
+        string pattern = @"^[0-9]+:[0-9]+=\\_[\r\n]+";
+        elyrText = Regex.Replace(elyrText, pattern, "", RegexOptions.Multiline);
         return elyrText;
     }
 
@@ -498,8 +514,24 @@ public class KFN
             string startTag = (newLine) ? "[" : "<";
             string endTag = (newLine) ? "]" : ">";
 
+            // format 1: Se/a/son tic/ket on
+            // end of line (no time code) = last time + 45 msec
+
+            // format 2: Cos I'm/ your su/per/-he/ro/_
+            // end of line (has time code)
+
+            // both formats:
+            // '_' - empty line (has time code, skipped in lrc)
+            if (words[i] != null && words[i].Length == 1 && words[i] == "_")
+            {
+                timeIndex++;
+                lrcText += "\n";
+                newLine = true;
+                continue;
+            }
+
             // in end of line: +45 msec
-            int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
+            int timing = (words[i] != null || this.iniVersion == 1) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
             decimal time = Convert.ToDecimal(timing);
             decimal min = Math.Truncate(time / 6000);
             decimal sec = Math.Truncate((time - min * 6000) / 100);
@@ -517,6 +549,7 @@ public class KFN
             }
             else
             {
+                if (this.iniVersion == 1) { timeIndex++; }
                 lrcText += "\n";
                 newLine = true;
             }
@@ -532,13 +565,24 @@ public class KFN
     private Dictionary<string[], int[]> parseTextFromINI(string iniBlock)
     {
         this.error = null;
-        Regex textRegex = new Regex(@"^Text[0-9]+=(.+)");
-        Regex syncRegex = new Regex(@"^Sync[0-9]+=([0-9,]+)");
+        Regex textRegex = new Regex(@"^[Tt]ext[0-9]+=(.+)");
+        Regex syncRegex = new Regex(@"^[Ss]ync[0-9]+=([0-9,]+)");
         string[] words = { };
         int[] timings = { };
         int lines = 0;
         // remove double spaces
         string iniText = iniBlock.Replace("  ", " ");
+        // format 1: Se/a/son tic/ket on
+        // '/' and ' ' is delimiter, '\n' is end of line (no time code)
+        // '' - empty line (no time code, skipped in lrc)
+        // '_' - empty line (has time code, skipped in lrc)
+        // time for end of line = last time + 45 msec
+
+        // format 2: Cos I'm/ your su/per/-he/ro/_
+        // '/' and ' ' is delimiter, '/_\n' is end of line (has time code)
+        // '/ ' - is delimiter (end of word), has time code
+        // '_' - empty line (has time code, skipped in lrc)
+        // time for end of line = end of line time code
         foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
         {
             Match texts = textRegex.Match(str);
@@ -546,11 +590,17 @@ public class KFN
             if (texts.Groups.Count > 1)
             {
                 string textLine = texts.Groups[1].Value;
+                if (textLine.Length > 1 && textLine[textLine.Length - 2] == '/' && textLine[textLine.Length - 1] == '_')
+                {
+                    this.iniVersion = 1;
+                    textLine = textLine.Substring(0, textLine.Length - 2);
+                }
                 textLine = textLine.Replace(" ", " /");
                 string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
-                // + end of line
-                Array.Resize(ref words, words.Length + linewords.Length + 1);
-                Array.Copy(linewords, 0, words, words.Length - linewords.Length - 1, linewords.Length);
+                // + end of line (besides '_')
+                int endLine = (textLine.Length == 1 && textLine[0] == '_') ? 0 : 1;
+                Array.Resize(ref words, words.Length + linewords.Length + endLine);
+                Array.Copy(linewords, 0, words, words.Length - linewords.Length - endLine, linewords.Length);
                 lines++;
             }
             else if (syncs.Groups.Count > 1)

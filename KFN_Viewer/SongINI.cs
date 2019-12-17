@@ -47,7 +47,7 @@ public class SongINI
         public BlockInfo(SectionData block, string KFNBlockType)
         {
             this.name = block.SectionName;
-            this.id = block.Keys["ID"];
+            this.id = (block.Keys["ID"] != null) ? block.Keys["ID"] : block.Keys["id"];
             this.type = KFNBlockType;
 
             string blockContent = "";
@@ -67,6 +67,10 @@ public class SongINI
         foreach (SectionData block in iniData.Sections)
         {
             string blockId = block.Keys["ID"];
+            if (blockId == null)
+            {
+                blockId = block.Keys["id"];
+            }
             this.blocks.Add(new BlockInfo(
                 block,
                 (blockId != null) ? this.GetIniBlockType(Convert.ToInt32(blockId)) : ""
