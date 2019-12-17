@@ -18,4 +18,4 @@ TODO:
 - [x] default encoding for lyric
 - [x] lyric with '-' and some symbols without time markers (Maksyuha)
 - [ ] break words into syllables
-- [ ] Ария - Штиль: create LRC!!!
+- [x] Ария - Штиль: create LRC!!!
