@@ -18,8 +18,6 @@ public class KFN
     private List<ResourceFile> resources = new List<ResourceFile>();
     private long endOfHeaderOffset;
     private long endOfPropsOffset;
-    // for convert lyric
-    private int iniVersion = 2;
     // US-ASCII
     private int resourceNamesEncodingAuto = 20127;
     private string autoDetectEncoding;
@@ -458,18 +456,13 @@ public class KFN
 
         for (int i = 1; i < words.Length; i++)
         {
-            if (i == words.Length - 1 && (words[i] == "_" || words[i] == null)) { break; }
+            if (i == words.Length - 1 && (words[i] == "_" || words[i] == null || words[i] == "")) { break; }
             if (!newLine)
             {
-                if (this.iniVersion == 1)
+                if (words[i] == "" && timeIndex < timings.Length - 1)
                 {
-                    if (words[i] == null && timeIndex < timings.Length - 1) { timeIndex++; }
-                    if (i < words.Length - 1 && timeIndex < timings.Length - 1 && words[i + 1] == "_")
-                    {
-                        timeIndex++;
-                        i++;
-                        words[i] = null;
-                    }
+                    timeIndex++;
+                    words[i] = null;
                 }
 
                 timing = timings[timeIndex] * 10;
@@ -514,14 +507,6 @@ public class KFN
             string startTag = (newLine) ? "[" : "<";
             string endTag = (newLine) ? "]" : ">";
 
-            // format 1: Se/a/son tic/ket on
-            // end of line (no time code) = last time + 45 msec
-
-            // format 2: Cos I'm/ your su/per/-he/ro/_
-            // end of line (has time code)
-
-            // both formats:
-            // '_' - empty line (has time code, skipped in lrc)
             if (words[i] != null && words[i].Length == 1 && words[i] == "_")
             {
                 timeIndex++;
@@ -531,7 +516,7 @@ public class KFN
             }
 
             // in end of line: +45 msec
-            int timing = (words[i] != null || this.iniVersion == 1) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
+            int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
             decimal time = Convert.ToDecimal(timing);
             decimal min = Math.Truncate(time / 6000);
             decimal sec = Math.Truncate((time - min * 6000) / 100);
@@ -541,7 +526,7 @@ public class KFN
                     + String.Format("{0:D2}", (int)sec) + "."
                     + String.Format("{0:D2}", (int)msec) + endTag;
 
-            if (words[i] != null)
+            if (words[i] != null && words[i] != "")
             {
                 lrcText += words[i];
                 newLine = false;
@@ -549,7 +534,7 @@ public class KFN
             }
             else
             {
-                if (this.iniVersion == 1) { timeIndex++; }
+                if (words[i] == "") { timeIndex++; }
                 lrcText += "\n";
                 newLine = true;
             }
@@ -572,17 +557,15 @@ public class KFN
         int lines = 0;
         // remove double spaces
         string iniText = iniBlock.Replace("  ", " ");
-        // format 1: Se/a/son tic/ket on
-        // '/' and ' ' is delimiter, '\n' is end of line (no time code)
+        // example 1: Se/a/son tic/ket on
+        // example 2: Cos I'm/ your su/per/-he/ro/_
+        // '/' and ' ' is delimiter, '/_\n' is end of line (has time code), '\n' is end of line (no time code)
+        // '/ ' - is delimiter (end of word), has time code
         // '' - empty line (no time code, skipped in lrc)
         // '_' - empty line (has time code, skipped in lrc)
-        // time for end of line = last time + 45 msec
+        // time for end of line w/o time code = last time + 45 msec
+        // time for end of line w/ time code = end of line time code
 
-        // format 2: Cos I'm/ your su/per/-he/ro/_
-        // '/' and ' ' is delimiter, '/_\n' is end of line (has time code)
-        // '/ ' - is delimiter (end of word), has time code
-        // '_' - empty line (has time code, skipped in lrc)
-        // time for end of line = end of line time code
         foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
         {
             Match texts = textRegex.Match(str);
@@ -590,10 +573,11 @@ public class KFN
             if (texts.Groups.Count > 1)
             {
                 string textLine = texts.Groups[1].Value;
+                bool endLineWithTimeCode = false;
                 if (textLine.Length > 1 && textLine[textLine.Length - 2] == '/' && textLine[textLine.Length - 1] == '_')
                 {
-                    this.iniVersion = 1;
                     textLine = textLine.Substring(0, textLine.Length - 2);
+                    endLineWithTimeCode = true;
                 }
                 textLine = textLine.Replace(" ", " /");
                 string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
@@ -601,6 +585,7 @@ public class KFN
                 int endLine = (textLine.Length == 1 && textLine[0] == '_') ? 0 : 1;
                 Array.Resize(ref words, words.Length + linewords.Length + endLine);
                 Array.Copy(linewords, 0, words, words.Length - linewords.Length - endLine, linewords.Length);
+                if (endLineWithTimeCode) { words[words.Length - 1] = ""; }
                 lines++;
             }
             else if (syncs.Groups.Count > 1)
