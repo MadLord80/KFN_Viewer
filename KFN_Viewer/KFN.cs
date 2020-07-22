@@ -547,6 +547,72 @@ public class KFN
         return lrcText;
     }
 
+    public string INItoUltraStar(string iniText)
+    {
+        this.error = null;
+        Dictionary<string[], int[]> TWords = this.parseTextFromINI(iniText);
+        if (TWords == null) { return null; }
+        string[] words = TWords.First().Key;
+        int[] timings = TWords.First().Value;
+
+        string usText = "";
+        if (words.Length == 0)
+        {
+            this.error = "Not found words in ini block!";
+            return null;
+        }
+
+        //: Regular note
+        //* Golden note
+        //F Freestyle syllable
+        //– Line break (separates lyrics into suitable lines).
+        bool newLine = true;
+        int timeIndex = 0;
+        for (int i = 0; i < words.Length; i++)
+        {
+            string startTag = (newLine) ? "[" : "<";
+            string endTag = (newLine) ? "]" : ">";
+
+            if (words[i] != null && words[i].Length == 1 && words[i] == "_")
+            {
+                timeIndex++;
+                usText += "\n";
+                newLine = true;
+                continue;
+            }
+
+            // in end of line: +45 msec
+            int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
+            decimal time = Convert.ToDecimal(timing);
+            decimal min = Math.Truncate(time / 6000);
+            decimal sec = Math.Truncate((time - min * 6000) / 100);
+            decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
+
+            usText += startTag + String.Format("{0:D2}", (int)min) + ":"
+                    + String.Format("{0:D2}", (int)sec) + "."
+                    + String.Format("{0:D2}", (int)msec) + endTag;
+
+            if (words[i] != null && words[i] != "")
+            {
+                usText += words[i];
+                newLine = false;
+                timeIndex++;
+            }
+            else
+            {
+                if (words[i] == "") { timeIndex++; }
+                usText += "\n";
+                newLine = true;
+            }
+        }
+        KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+        KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+        if (titleProp.Value != null) { usText = "[ti:" + titleProp.Value + "]\n" + usText; }
+        if (artistProp.Value != null) { usText = "[ar:" + artistProp.Value + "]\n" + usText; }
+
+        return usText;
+    }
+
     private Dictionary<string[], int[]> parseTextFromINI(string iniBlock)
     {
         this.error = null;
