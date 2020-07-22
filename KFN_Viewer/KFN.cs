@@ -566,18 +566,19 @@ public class KFN
         //* Golden note
         //F Freestyle syllable
         //– Line break (separates lyrics into suitable lines).
-        bool newLine = true;
+        //bool newLine = true;
         int timeIndex = 0;
+        string startTag = ": ";
         for (int i = 0; i < words.Length; i++)
         {
-            string startTag = (newLine) ? "[" : "<";
-            string endTag = (newLine) ? "]" : ">";
+            //string startTag = (newLine) ? "[" : "<";
+            //string endTag = (newLine) ? "]" : ">";
 
             if (words[i] != null && words[i].Length == 1 && words[i] == "_")
             {
                 timeIndex++;
                 usText += "\n";
-                newLine = true;
+                //newLine = true;
                 continue;
             }
 
@@ -605,10 +606,10 @@ public class KFN
                 newLine = true;
             }
         }
-        KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
-        KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
-        if (titleProp.Value != null) { usText = "[ti:" + titleProp.Value + "]\n" + usText; }
-        if (artistProp.Value != null) { usText = "[ar:" + artistProp.Value + "]\n" + usText; }
+        //KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+        //KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+        //if (titleProp.Value != null) { usText = "[ti:" + titleProp.Value + "]\n" + usText; }
+        //if (artistProp.Value != null) { usText = "[ar:" + artistProp.Value + "]\n" + usText; }
 
         return usText;
     }
