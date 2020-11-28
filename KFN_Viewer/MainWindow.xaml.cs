@@ -51,6 +51,7 @@ namespace KFN_Viewer
             viewConfigButton.IsEnabled = false;
             toEMZMenu.IsEnabled = false;
             toMP3LRCMenu.IsEnabled = false;
+            toUSMenu.IsEnabled = false;
             toKFNMenu.IsEnabled = false;
             decryptKFN.IsEnabled = false;
             decryptKFN.IsChecked = true;
@@ -119,6 +120,7 @@ namespace KFN_Viewer
                 viewConfigButton.IsEnabled = true;
                 toEMZMenu.IsEnabled = true;
                 toMP3LRCMenu.IsEnabled = true;
+                toUSMenu.IsEnabled = true;
                 toKFNMenu.IsEnabled = true;
 
                 KFN.ResourceFile encResource = KFN.Resources.Where(r => r.IsEncrypted == true).FirstOrDefault();
@@ -258,6 +260,12 @@ namespace KFN_Viewer
         private void ToMP3LRCMenu_Click(object sender, RoutedEventArgs e)
         {
             ExportWindow exportWindow = new ExportWindow("MP3+LRC", this.KFN);
+            exportWindow.Show();
+        }
+
+        private void ToUSMenu_Click(object sender, RoutedEventArgs e)
+        {
+            ExportWindow exportWindow = new ExportWindow("UltraStar", this.KFN);
             exportWindow.Show();
         }
 

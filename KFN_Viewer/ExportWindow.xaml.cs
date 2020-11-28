@@ -34,9 +34,9 @@ namespace KFN_Viewer
             this.KFN = KFN;
             this.exportType = exportType;
 
-            videoLabel.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
-            videoSelect.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
-            playVideoButton.Visibility = (exportType == "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            videoLabel.Visibility = (exportType != "MP3+LRC") ? Visibility.Visible : Visibility.Hidden;
+            videoSelect.Visibility = (exportType != "MP3+LRC") ? Visibility.Visible : Visibility.Hidden;
+            playVideoButton.Visibility = (exportType != "MP3+LRC") ? Visibility.Visible : Visibility.Hidden;
             deleteID3Tags.IsChecked = true;
             deleteID3Tags.Visibility = (exportType == "MP3+LRC") ? Visibility.Visible : Visibility.Hidden;
             artistLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
@@ -45,6 +45,9 @@ namespace KFN_Viewer
             titleSelect.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
             encLabel.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
             encSelect.Visibility = (exportType != "EMZ") ? Visibility.Visible : Visibility.Hidden;
+            BPMLabel.Visibility = (exportType == "UltraStar") ? Visibility.Visible : Visibility.Hidden;
+            BPMField.Visibility = (exportType == "UltraStar") ? Visibility.Visible : Visibility.Hidden;
+            BPMField.Text = "300";
 
             // TODO
             playVideoButton.IsEnabled = false;
@@ -77,9 +80,22 @@ namespace KFN_Viewer
             SongINI sINI = new SongINI(iniText);
             foreach (SongINI.BlockInfo block in sINI.Blocks.Where(b => b.Id == "1" || b.Id == "2"))
             {
-                string lyricFromBlock = (exportType == "EMZ")
-                    ? KFN.INIToELYR(block.Content)
-                    : KFN.INIToExtLRC(block.Content);
+                string lyricFromBlock = null;
+                switch (exportType)
+                {
+                    case "EMZ":
+                        lyricFromBlock = KFN.INIToELYR(block.Content);
+                        break;
+                    case "MP3+LRC":
+                        lyricFromBlock = KFN.INIToExtLRC(block.Content);
+                        break;
+                    case "UltraStar":
+                        //lyricFromBlock = KFN.INItoUltraStar(block.Content);
+                        lyricFromBlock = KFN.INIToExtLRC(block.Content);
+                        break;
+                    default:
+                        break;
+                }
                 if (lyricFromBlock != null)
                 {
                     lyrics.Add("Song.ini: " + block.Name, lyricFromBlock);
@@ -94,9 +110,9 @@ namespace KFN_Viewer
             if (lyrics.Count == 1) { lyricSelect.IsEnabled = false; }
             lyricSelect.ItemsSource = lyrics;
             lyricPreview.Text = ((KeyValuePair<string, string>)lyricSelect.SelectedItem).Value;
-
+            
             // ARTIST-TITLE
-            if (exportType == "MP3+LRC")
+            if (exportType == "MP3+LRC" || exportType == "UltraStar")
             {
                 List<string> artists = new List<string> { null };
                 List<string> titles = new List<string> { null };
@@ -126,7 +142,7 @@ namespace KFN_Viewer
             }
 
             // VIDEO
-            if (exportType == "EMZ")
+            if (exportType == "EMZ" || exportType == "UltraStar")
             {
                 List<KFN.ResourceFile> videos = KFN.Resources.Where(r => r.FileType == "Video").ToList();
                 if (videos.Count == 0)
@@ -141,6 +157,25 @@ namespace KFN_Viewer
                 videoSelect.ItemsSource = videos;
                 videoSelect.DisplayMemberPath = "FileName";
                 videoSelect.SelectedIndex = 0;
+            }
+
+            if (exportType == "UltraStar" && !lyricPreview.Text.Contains("Can`t convert lyric from Song.ini"))
+            {
+                KeyValuePair<string, string> artistProp = KFN.Properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+                KeyValuePair<string, string> titleProp = KFN.Properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+                string title = titleProp.Value ?? "";
+                string artist = artistProp.Value ?? "";
+
+                string mp3 = (audioSelect.SelectedItem != null) ? (audioSelect.SelectedItem as KFN.ResourceFile).FileName : "";
+                string video = (videoSelect.SelectedItem != null) ? (videoSelect.SelectedItem as KFN.ResourceFile).FileName : "";
+                if (video == "video not found") { video = ""; }
+                string USData = "#TITLE:" + title 
+                    + "\n#ARTIST:" + artist 
+                    + "\n#MP3:" + mp3 
+                    + "\n#VIDEO:" + video 
+                    +"\n#BPM:" + BPMField.Text 
+                    + "\n#GAP:\n";
+                lyricPreview.Text = USData + lyricPreview.Text;
             }
         }
 
@@ -193,11 +228,6 @@ namespace KFN_Viewer
             lyricPreview.Text = origText;
         }
 
-        private void AudioSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            
-        }
-
         private void LyricSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             lyricPreview.Text = ((KeyValuePair<string, string>)lyricSelect.SelectedItem).Value;
@@ -220,6 +250,16 @@ namespace KFN_Viewer
 
             string lyric = lyricPreview.Text;
             if (lyric.Length == 0 || lyric.Contains("Can`t convert lyric from Song.ini")) { return; }
+
+            if (BPMField.Visibility == Visibility.Visible)
+            {
+                int bpm = Convert.ToInt32(BPMField.Text);
+                if (bpm <= 250 || bpm >= 550)
+                {
+                    System.Windows.MessageBox.Show("BPM must be 250-550!");
+                    return;
+                }
+            }
             
             FileInfo kfnFile = new FileInfo(KFN.FullFileName);
             FolderBrowserDialog.SelectedPath = kfnFile.DirectoryName;
@@ -282,6 +322,21 @@ namespace KFN_Viewer
                     System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + mp3FileName);
                 }
             }
+        }
+
+        private void BPMField_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (Regex.IsMatch(BPMField.Text, @"[^0-9]"))
+            {
+                BPMField.Text = Regex.Replace(BPMField.Text, @"[^0-9]", "");
+            }
+            else if (BPMField.Text.Length > 3)
+            {
+                BPMField.Text = Regex.Replace(BPMField.Text, @".$", "");
+            }
+
+            string origText = lyricPreview.Text;
+            origText = Regex.Replace(origText, @"#BPM:[0-9]+", "#BPM:" + BPMField.Text);
         }
     }
 }
