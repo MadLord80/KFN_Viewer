@@ -606,10 +606,17 @@ public class KFN
         //        newLine = true;
         //    }
         //}
-        //KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
-        //KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
-        //if (titleProp.Value != null) { usText = "[ti:" + titleProp.Value + "]\n" + usText; }
-        //if (artistProp.Value != null) { usText = "[ar:" + artistProp.Value + "]\n" + usText; }
+        KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+        KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
+        usText = "#GAP:" + timings[0] + "\n" + usText;
+        List<ResourceFile> videos = this.resources.Where(r => r.FileType == "Video").ToList();
+        string video = (videos.Count == 0 || videos.Count > 1) ? "" : videos[0].FileName;
+        usText = "#VIDEO:" + video + "\n" + usText;
+        usText = "#MP3:" + this.GetAudioSourceName() + "\n" + usText;
+        string artist = artistProp.Value ?? "";
+        usText = "#ARTIST:" + artist + "\n" + usText;
+        string title = titleProp.Value ?? "";
+        usText = "#TITLE:" + title + "\n" + usText;
 
         return usText;
     }

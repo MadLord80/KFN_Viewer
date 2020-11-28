@@ -90,8 +90,7 @@ namespace KFN_Viewer
                         lyricFromBlock = KFN.INIToExtLRC(block.Content);
                         break;
                     case "UltraStar":
-                        //lyricFromBlock = KFN.INItoUltraStar(block.Content);
-                        lyricFromBlock = KFN.INIToExtLRC(block.Content);
+                        lyricFromBlock = KFN.INItoUltraStar(block.Content);
                         break;
                     default:
                         break;
@@ -161,21 +160,7 @@ namespace KFN_Viewer
 
             if (exportType == "UltraStar" && !lyricPreview.Text.Contains("Can`t convert lyric from Song.ini"))
             {
-                KeyValuePair<string, string> artistProp = KFN.Properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
-                KeyValuePair<string, string> titleProp = KFN.Properties.Where(kv => kv.Key == "Title").FirstOrDefault();
-                string title = titleProp.Value ?? "";
-                string artist = artistProp.Value ?? "";
-
-                string mp3 = (audioSelect.SelectedItem != null) ? (audioSelect.SelectedItem as KFN.ResourceFile).FileName : "";
-                string video = (videoSelect.SelectedItem != null) ? (videoSelect.SelectedItem as KFN.ResourceFile).FileName : "";
-                if (video == "video not found") { video = ""; }
-                string USData = "#TITLE:" + title 
-                    + "\n#ARTIST:" + artist 
-                    + "\n#MP3:" + mp3 
-                    + "\n#VIDEO:" + video 
-                    +"\n#BPM:" + BPMField.Text 
-                    + "\n#GAP:\n";
-                lyricPreview.Text = USData + lyricPreview.Text;
+                lyricPreview.Text = "#BPM:" + BPMField.Text + "\n" + lyricPreview.Text;
             }
         }
 
@@ -205,24 +190,52 @@ namespace KFN_Viewer
             string origText = lyricPreview.Text;
             if (artist != null && artist.Length > 0)
             {
-                if (Regex.IsMatch(origText, @"\[ar:[^\]]+\]"))
+                if (exportType == "MP3+LRC")
                 {
-                    origText = Regex.Replace(origText, @"\[ar:[^\n]+", "[ar:" + artist + "]");
+                    if (Regex.IsMatch(origText, @"\[ar:[^\]]+\]"))
+                    {
+                        origText = Regex.Replace(origText, @"\[ar:[^\n]+", "[ar:" + artist + "]");
+                    }
+                    else
+                    {
+                        origText = "[ar:" + artist + "]\n" + origText;
+                    }
                 }
-                else
+                else if (exportType == "UltraStar")
                 {
-                    origText = "[ar:" + artist + "]\n" + origText;
+                    if (Regex.IsMatch(origText, @"#ARTIST:"))
+                    {
+                        origText = Regex.Replace(origText, @"#ARTIST:[^\n]*", "#ARTIST:" + artist);
+                    }
+                    else
+                    {
+                        origText = "#ARTIST:" + artist + "\n" + origText;
+                    }
                 }
             }
             if (title != null && title.Length > 0)
             {
-                if (Regex.IsMatch(origText, @"\[ti:[^\]]+\]"))
+                if (exportType == "MP3+LRC")
                 {
-                    origText = Regex.Replace(origText, @"\[ti:[^\n]+", "[ti:" + title + "]");
+                    if (Regex.IsMatch(origText, @"\[ti:[^\]]+\]"))
+                    {
+                        origText = Regex.Replace(origText, @"\[ti:[^\n]+", "[ti:" + title + "]");
+                    }
+                    else
+                    {
+                        origText = "[ti:" + title + "]\n" + origText;
+                    }
                 }
-                else
+                else if (exportType == "UltraStar")
                 {
-                    origText = "[ti:" + title + "]\n" + origText;
+                    if (Regex.IsMatch(origText, @"#TITLE:"))
+                    {
+                        origText = Regex.Replace(origText, @"#TITLE:[^\n]*", "#TITLE:" + title);
+                    }
+                    else
+                    {
+                        origText = "#TITLE:" + title + "\n" + origText;
+                    }
                 }
             }
             lyricPreview.Text = origText;
@@ -335,8 +348,7 @@ namespace KFN_Viewer
                 BPMField.Text = Regex.Replace(BPMField.Text, @".$", "");
             }
 
-            string origText = lyricPreview.Text;
-            origText = Regex.Replace(origText, @"#BPM:[0-9]+", "#BPM:" + BPMField.Text);
+            lyricPreview.Text = Regex.Replace(lyricPreview.Text, @"#BPM:[0-9]+", "#BPM:" + BPMField.Text);
         }
     }
 }
