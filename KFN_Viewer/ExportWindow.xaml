@@ -26,9 +26,9 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Label x:Name="videoLabel" Content="Video: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Row="1"/>
-        <ComboBox x:Name="videoSelect" HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Grid.Row="1" Width="338"/>
+        <ComboBox x:Name="videoSelect" HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Grid.Row="1" Width="338" SelectionChanged="VideoSelect_SelectionChanged"/>
         <Label Content="Audio: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Row="2"/>
-        <ComboBox x:Name="audioSelect" HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Width="338" Grid.Row="2"/>
+        <ComboBox x:Name="audioSelect" HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Width="338" Grid.Row="2" SelectionChanged="AudioSelect_SelectionChanged"/>
         <Label Content="Lyric: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Row="3"/>
         <ComboBox x:Name="lyricSelect" HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Width="338" SelectionChanged="LyricSelect_SelectionChanged" Grid.Row="3"/>
         <Label Content="Lyric preview: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Column="1"/>

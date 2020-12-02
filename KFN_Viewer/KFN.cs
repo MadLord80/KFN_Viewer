@@ -547,14 +547,14 @@ public class KFN
         return lrcText;
     }
 
-    public string INItoUltraStar(string iniText)
+    public string INItoUltraStar(string iniText, decimal BPM)
     {
         this.error = null;
         Dictionary<string[], int[]> TWords = this.parseTextFromINI(iniText);
         if (TWords == null) { return null; }
         string[] words = TWords.First().Key;
         int[] timings = TWords.First().Value;
-
+        
         string usText = "";
         if (words.Length == 0)
         {
@@ -562,50 +562,99 @@ public class KFN
             return null;
         }
 
+        decimal GAP = (decimal)timings[0];
+
         //: Regular note
         //* Golden note
         //F Freestyle syllable
         //– Line break (separates lyrics into suitable lines).
+
+        // null - end of line (no time code)
+        // '' - empty line (no time code, skipped in lrc)
+        // '_' - empty line (has time code, skipped in lrc)
+
+        //: 7 6 0 Поб
+        //: 13 7 1 лед
+        //: 20 8 1 нев
+        //: 28 7 - 2 ши
+        //: 35 6 - 2 е
+        //: 54 8 0  ли
+        //: 62 11 - 2 стья
+        //: 75 6 2  о
+        //: 81 8 2 кна
+        //- 113
+        //: 146 8 1 За
+        //: 154 4 0 ра
+        //: 158 12 2 ста
+        //: 170 8 2 ют
+        //: 187 10 - 6  проз
+        //: 197 14 - 5 рач
+        //: 211 6 - 6 ной
+        //: 224 6 - 8  во
+        //: 230 10 0 дой
+        //- 250
+        //The first value means the time stamp which indicates when the tone begins which is to be sung.
+        //The second value indicates the length of this tone in beats.If the following tone does not begin right after the previous one, 
+        //you have breaks. In our example: there is a break lasting for 1 beat after "always", "talk", "a" and "things".
+        //The third value indicates the pitch of the tone(0 = C1.) After that you see the syllable which belongs to the tone.
+        //UltraStar determines if the following syllable still belongs to one word by blanks:
+        //if there is NO blank after the syllable, the next syllable still belongs to the word;
+        //if there is a blank after the syllable, the next syllable will be classified as the beginning of a new word.
+        //The line
+        //- 152
+        //indicates that everything following it shall be shown in a new line on the screen.
+        //It can also look like this:
+        //-152 153
+        //Here, the first value indicates the time when the previous line shall disappear from the screen 
+        //and the second value indicates when the following line shall appear.
+
+        //ms = bpm / (BPM * 4) * 60000 + GAP
+        //bpm = (ms - GAP) / 60000 * (BPM * 4)
+        //2610 / 60000 * 1491.4 = 64,88
+        //372.85 * 4 = 1491,4
+        //? / 1491.4 * 60000 + 34960 = 37030
+        decimal oneBpmInMs = 60000 / (BPM * 4);
+
         //bool newLine = true;
         //int timeIndex = 0;
         //string startTag = ": ";
-        //for (int i = 0; i < words.Length; i++)
-        //{
-        //    //string startTag = (newLine) ? "[" : "<";
-        //    //string endTag = (newLine) ? "]" : ">";
+        for (int i = 0; i < words.Length; i++)
+        {
+            //    //string startTag = (newLine) ? "[" : "<";
+            //    //string endTag = (newLine) ? "]" : ">";
 
-        //    if (words[i] != null && words[i].Length == 1 && words[i] == "_")
-        //    {
-        //        timeIndex++;
-        //        usText += "\n";
-        //        //newLine = true;
-        //        continue;
-        //    }
+            //    if (words[i] != null && words[i].Length == 1 && words[i] == "_")
+            //    {
+            //        timeIndex++;
+            //        usText += "\n";
+            //        //newLine = true;
+            //        continue;
+            //    }
 
-        //    // in end of line: +45 msec
-        //    int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
-        //    decimal time = Convert.ToDecimal(timing);
-        //    decimal min = Math.Truncate(time / 6000);
-        //    decimal sec = Math.Truncate((time - min * 6000) / 100);
-        //    decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
+            //    // in end of line: +45 msec
+            //    int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
+            //    decimal time = Convert.ToDecimal(timing);
+            //    decimal min = Math.Truncate(time / 6000);
+            //    decimal sec = Math.Truncate((time - min * 6000) / 100);
+            //    decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
 
-        //    usText += startTag + String.Format("{0:D2}", (int)min) + ":"
-        //            + String.Format("{0:D2}", (int)sec) + "."
-        //            + String.Format("{0:D2}", (int)msec) + endTag;
+            //    usText += startTag + String.Format("{0:D2}", (int)min) + ":"
+            //            + String.Format("{0:D2}", (int)sec) + "."
+            //            + String.Format("{0:D2}", (int)msec) + endTag;
 
-        //    if (words[i] != null && words[i] != "")
-        //    {
-        //        usText += words[i];
-        //        newLine = false;
-        //        timeIndex++;
-        //    }
-        //    else
-        //    {
-        //        if (words[i] == "") { timeIndex++; }
-        //        usText += "\n";
-        //        newLine = true;
-        //    }
-        //}
+            //    if (words[i] != null && words[i] != "")
+            //    {
+            //        usText += words[i];
+            //        newLine = false;
+            //        timeIndex++;
+            //    }
+            //    else
+            //    {
+            //        if (words[i] == "") { timeIndex++; }
+            //        usText += "\n";
+            //        newLine = true;
+            //    }
+        }
         KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
         KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
         usText = "#GAP:" + timings[0] + "\n" + usText;
@@ -617,8 +666,14 @@ public class KFN
         usText = "#ARTIST:" + artist + "\n" + usText;
         string title = titleProp.Value ?? "";
         usText = "#TITLE:" + title + "\n" + usText;
-
+         
         return usText;
+    }
+
+    private decimal ms2bpm(decimal ms, decimal gap, decimal BPM)
+    {        
+        decimal bpm = (ms - gap) / 60000 * (BPM * 4);
+        return bpm;
     }
 
     private Dictionary<string[], int[]> parseTextFromINI(string iniBlock)

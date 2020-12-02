@@ -90,7 +90,11 @@ namespace KFN_Viewer
                         lyricFromBlock = KFN.INIToExtLRC(block.Content);
                         break;
                     case "UltraStar":
-                        lyricFromBlock = KFN.INItoUltraStar(block.Content);
+                        lyricFromBlock = KFN.INItoUltraStar(block.Content, Convert.ToDecimal(BPMField.Text));
+                        if (!lyricFromBlock.Contains("Can`t convert lyric from Song.ini"))
+                        {
+                            lyricFromBlock = "#BPM:" + BPMField.Text + "\n" + lyricFromBlock;
+                        }
                         break;
                     default:
                         break;
@@ -156,12 +160,7 @@ namespace KFN_Viewer
                 videoSelect.ItemsSource = videos;
                 videoSelect.DisplayMemberPath = "FileName";
                 videoSelect.SelectedIndex = 0;
-            }
-
-            if (exportType == "UltraStar" && !lyricPreview.Text.Contains("Can`t convert lyric from Song.ini"))
-            {
-                lyricPreview.Text = "#BPM:" + BPMField.Text + "\n" + lyricPreview.Text;
-            }
+            }          
         }
 
         private string GetResourceText(KFN.ResourceFile resource)
@@ -244,6 +243,14 @@ namespace KFN_Viewer
         private void LyricSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             lyricPreview.Text = ((KeyValuePair<string, string>)lyricSelect.SelectedItem).Value;
+            if (exportType == "UltraStar" && videoSelect.SelectedItem != null && audioSelect.SelectedItem != null)
+            {
+                string video = (videoSelect.SelectedItem as KFN.ResourceFile).FileName;
+                video = (video == "video not found") ? "" : video;
+                lyricPreview.Text = Regex.Replace(lyricPreview.Text, @"#VIDEO:[^\n]*", "#VIDEO:" + video);
+                string audio = (audioSelect.SelectedItem as KFN.ResourceFile).FileName;
+                lyricPreview.Text = Regex.Replace(lyricPreview.Text, @"#MP3:[^\n]*", "#MP3:" + audio);
+            }
         }
 
         private void ArtistSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -349,6 +356,25 @@ namespace KFN_Viewer
             }
 
             lyricPreview.Text = Regex.Replace(lyricPreview.Text, @"#BPM:[0-9]+", "#BPM:" + BPMField.Text);
+        }
+
+        private void VideoSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (exportType == "UltraStar")
+            {
+                string video = (videoSelect.SelectedItem as KFN.ResourceFile).FileName;
+                video = (video == "video not found") ? "" : video;
+                lyricPreview.Text = Regex.Replace(lyricPreview.Text, @"#VIDEO:[^\n]*", "#VIDEO:" + video);
+            }
+        }
+
+        private void AudioSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (exportType == "UltraStar")
+            {
+                string audio = (audioSelect.SelectedItem as KFN.ResourceFile).FileName;
+                lyricPreview.Text = Regex.Replace(lyricPreview.Text, @"#MP3:[^\n]*", "#MP3:" + audio);
+            }
         }
     }
 }
