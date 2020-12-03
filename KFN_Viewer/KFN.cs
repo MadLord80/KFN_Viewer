@@ -640,20 +640,18 @@ public class KFN
         usText += "WORDS: " + words.Length + ", TIMINGS: " + timings.Length + "\n";
         for (int i = 0; i < words.Length; i++)
         {
-            string word = (words[i] == null) ? "NULL" : words[i];
+            //string word = (words[i] == null) ? "NULL" : words[i];
             //usText += timings[timeIndex] + " [" + timeIndex + "] : " + word + " [" + i + "]\n";
-            decimal time = Convert.ToDecimal(timings[timeIndex] * 10);
-            decimal bpm = Math.Floor(this.ms2bpm(time, GAP, BPM));
-            if (words[i] != null) { timeIndex++; }
-            decimal bpmLength = (Convert.ToDecimal(timings[timeIndex] * 10) - time) / oneBpmInMs;
-            usText = ": " + bpm + " " + Math.Floor(bpmLength) + " 0 " + word + "\n";
-            //if (words[i] != null && words[i].Length == 1 && words[i] == "_")
-            //{
-            //    timeIndex++;
-            //    usText += "\n";
-            //    //newLine = true;
-            //    continue;
-            //}
+            //if (words[i] != null) { timeIndex++; }
+            //decimal bpmLength = (Convert.ToDecimal(timings[timeIndex] * 10) - time) / oneBpmInMs;
+            //usText = ": " + bpm + " " + Math.Floor(bpmLength) + " 0 " + word + "\n";bn 
+
+            if (words[i] != null && words[i].Length == 1 && words[i] == "_")
+            {
+                timeIndex++;
+                usText += "\n";
+                continue;
+            }
 
             //    // in end of line: +45 msec
             //    int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
@@ -666,18 +664,24 @@ public class KFN
             //            + String.Format("{0:D2}", (int)sec) + "."
             //            + String.Format("{0:D2}", (int)msec) + endTag;
 
-            //    if (words[i] != null && words[i] != "")
-            //    {
-            //        usText += words[i];
-            //        newLine = false;
-            //        timeIndex++;
-            //    }
-            //    else
-            //    {
-            //        if (words[i] == "") { timeIndex++; }
-            //        usText += "\n";
-            //        newLine = true;
-            //    }
+            if (i + 1 == words.Length && (words[i] == null || words[i] == ""))
+            {
+                timeIndex--;
+            }
+            decimal time = Convert.ToDecimal(timings[timeIndex] * 10);
+            decimal bpm = Math.Floor(this.ms2bpm(time, GAP, BPM));
+            //decimal bpmLength = (Convert.ToDecimal(timings[timeIndex] * 10) - time) / oneBpmInMs;
+
+            if (words[i] != null && words[i] != "")
+            {
+                usText += ": " + bpm + " " + Math.Floor(bpm) + " 0 " + words[i] + "\n";
+                timeIndex++;
+            }
+            else
+            {
+                if (words[i] == "") { timeIndex++; }
+                usText += "- " + bpm + "\n";
+            }
         }
         KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
         KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
@@ -690,6 +694,8 @@ public class KFN
         usText = "#ARTIST:" + artist + "\n" + usText;
         string title = titleProp.Value ?? "";
         usText = "#TITLE:" + title + "\n" + usText;
+
+        usText += "E\n";
          
         return usText;
     }
