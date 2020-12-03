@@ -568,11 +568,7 @@ public class KFN
         //* Golden note
         //F Freestyle syllable
         //– Line break (separates lyrics into suitable lines).
-
-        // null - end of line (no time code)
-        // '' - empty line (no time code, skipped in lrc)
-        // '_' - empty line (has time code, skipped in lrc)
-
+        
         //: 7 6 0 Поб
         //: 13 7 1 лед
         //: 20 8 1 нев
@@ -615,21 +611,49 @@ public class KFN
         //? / 1491.4 * 60000 + 34960 = 37030
         decimal oneBpmInMs = 60000 / (BPM * 4);
 
+        // null - end of line (no time code)
+        // '' - empty line (no time code, skipped in lrc)
+        // '_' - empty line (has time code, skipped in lrc)
+
         //bool newLine = true;
-        //int timeIndex = 0;
-        //string startTag = ": ";
+        //WORDS: 84, TIMINGS: 82
+        //2089[0] : It[0]
+        //2112[1] : takes[1]
+        //2136[2] : your[2]
+        //2159[3] : breath[3]
+        //2207[4] :  [4]
+        //2278 [5] : It'll  [5]
+        //2301 [6] : leave[6]
+        //2325 [7] : you[7]
+        //2348 [8] : blind[8]
+        //2396 [9] :  [9]
+        //3056 [10] : What[10]
+        //3080 [11] : we[11]
+        //3103 [12] : have[12]
+        //3132 [13] : made[13]
+        //3198 [14] : NULL[14]
+        //3198 [14] : is  [15]
+        //3228 [15] : real[16]
+        //3316 [16] :  [17]
+        //3599 [17] : A[18]
+        int timeIndex = 0;
+        usText += "WORDS: " + words.Length + ", TIMINGS: " + timings.Length + "\n";
         for (int i = 0; i < words.Length; i++)
         {
-            //    //string startTag = (newLine) ? "[" : "<";
-            //    //string endTag = (newLine) ? "]" : ">";
-
-            //    if (words[i] != null && words[i].Length == 1 && words[i] == "_")
-            //    {
-            //        timeIndex++;
-            //        usText += "\n";
-            //        //newLine = true;
-            //        continue;
-            //    }
+            string word = (words[i] == null) ? "NULL" : words[i];
+            //usText += timings[timeIndex] + " [" + timeIndex + "] : " + word + " [" + i + "]\n";
+            decimal time = Convert.ToDecimal(timings[timeIndex] * 10);
+            decimal bpm = Math.Floor(this.ms2bpm(time, GAP, BPM));
+            if (words[i] != null) { timeIndex++; }
+            decimal bpmLength = (Convert.ToDecimal(timings[timeIndex] * 10) - time) / oneBpmInMs;
+            usText = ": " + bpm + " " + Math.Floor(bpmLength) + " 0 " + word + "\n";
+            //if (words[i] != null && words[i].Length == 1 && words[i] == "_")
+            //{
+            //    timeIndex++;
+            //    usText += "\n";
+            //    //newLine = true;
+            //    continue;
+            //}
 
             //    // in end of line: +45 msec
             //    int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
