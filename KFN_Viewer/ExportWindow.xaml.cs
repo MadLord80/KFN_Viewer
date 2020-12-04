@@ -341,6 +341,20 @@ namespace KFN_Viewer
                     }
                     System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + mp3FileName);
                 }
+                else if (exportType == "UltraStar")
+                {
+                    int encCode = ((KeyValuePair<int, string>)encSelect.SelectedItem).Key;
+                    Encoding lrcEnc = (encCode == 0) ? Encoding.Default : Encoding.GetEncoding(encCode);
+                    byte[] lrcData = lrcEnc.GetBytes(lyric);
+                    //byte[] bom = lrcEnc.GetPreamble();
+                    string usFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".txt";
+                    using (FileStream fs = new FileStream(exportFolder + "\\" + usFileName, FileMode.Create, FileAccess.Write))
+                    {
+                        //fs.Write(bom, 0, bom.Length);
+                        fs.Write(lrcData, 0, lrcData.Length);
+                    }
+                    System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + usFileName);
+                }
             }
         }
 

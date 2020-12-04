@@ -550,19 +550,12 @@ public class KFN
     public string INItoUltraStar(string iniText, decimal BPM)
     {
         this.error = null;
-        Dictionary<string[], int[]> TWords = this.parseTextFromINI(iniText);
-        if (TWords == null) { return null; }
-        string[] words = TWords.First().Key;
-        int[] timings = TWords.First().Value;
+        List<KeyValuePair<decimal, string>> TWords = this.parseTextFromINI_new(iniText);
+        if (TWords.Count == 0) { return null; }
         
         string usText = "";
-        if (words.Length == 0)
-        {
-            this.error = "Not found words in ini block!";
-            return null;
-        }
 
-        decimal GAP = (decimal)timings[0];
+        decimal GAP = TWords[0].Key * 10;
 
         //: Regular note
         //* Golden note
@@ -616,80 +609,100 @@ public class KFN
         // '_' - empty line (has time code, skipped in lrc)
 
         //bool newLine = true;
-        //WORDS: 84, TIMINGS: 82
-        //2089[0] : It[0]
-        //2112[1] : takes[1]
-        //2136[2] : your[2]
-        //2159[3] : breath[3]
-        //2207[4] :  [4]
-        //2278 [5] : It'll  [5]
-        //2301 [6] : leave[6]
-        //2325 [7] : you[7]
-        //2348 [8] : blind[8]
-        //2396 [9] :  [9]
-        //3056 [10] : What[10]
-        //3080 [11] : we[11]
-        //3103 [12] : have[12]
-        //3132 [13] : made[13]
-        //3198 [14] : NULL[14]
-        //3198 [14] : is  [15]
-        //3228 [15] : real[16]
-        //3316 [16] :  [17]
-        //3599 [17] : A[18]
-        int timeIndex = 0;
-        usText += "WORDS: " + words.Length + ", TIMINGS: " + timings.Length + "\n";
-        for (int i = 0; i < words.Length; i++)
+        //[6] 2278 : It'll 
+        //[7] 2301 : leave
+        //[8] 2325 : you
+        //[9] 2348 : blind
+        //[10] 2396 : $
+        //[11] 0 : 
+        //[12] 3056 : What
+        //[13] 3080 : we
+        //[14] 3103 : have
+        //[15] 3132 : made
+        //[16] 0 : 
+
+        //[0] 3496 : В
+        //[1] 3530 : по
+        //[2] 3567 : блед
+        //[3] 3599 : нев
+        //[4] 3619 : ших
+        //[5] 3703 : лис
+        //[6] 3757 : тьях
+        //[7] 3809 : ок
+        //[8] 3843 : нa
+        //[9] 0 : 
+        //[10] 4045 : Зa
+        //[11] 4082 : pас
+        //[12] 4116 : тa
+        //[13] 4169 : ет
+        //[14] 4219 : пpо
+        //[15] 4250 : зpaч
+        //[16] 4303 : ной
+        //[17] 4353 : во
+        //[18] 4392 : дой
+        //[19] 0 : 
+        //: 7 6 0 Поб
+        //: 13 7 1 лед
+        //: 20 8 1 нев
+        //: 28 7 - 2 ши
+        //: 35 6 - 2 е
+        //: 54 8 0  ли
+        //: 62 11 - 2 стья
+        //: 75 6 2  о
+        //: 81 8 2 кна
+        //- 113
+        //: 146 8 1 За
+        //: 154 4 0 ра
+        //: 158 12 2 ста
+        //: 170 8 2 ют
+        //: 187 10 - 6  проз
+        //: 197 14 - 5 рач
+        //: 211 6 - 6 ной
+        //: 224 6 - 8  во
+        //: 230 10 0 дой
+        //- 250
+        for (int i = 0; i < TWords.Count; i++)
         {
-            //string word = (words[i] == null) ? "NULL" : words[i];
-            //usText += timings[timeIndex] + " [" + timeIndex + "] : " + word + " [" + i + "]\n";
-            //if (words[i] != null) { timeIndex++; }
-            //decimal bpmLength = (Convert.ToDecimal(timings[timeIndex] * 10) - time) / oneBpmInMs;
-            //usText = ": " + bpm + " " + Math.Floor(bpmLength) + " 0 " + word + "\n";bn 
+            KeyValuePair<decimal, string> kv = TWords[i];
 
-            if (words[i] != null && words[i].Length == 1 && words[i] == "_")
+            decimal time = Convert.ToDecimal(kv.Key * 10);
+            
+            if (kv.Value == null)
             {
-                timeIndex++;
-                usText += "\n";
+                // if some previous also == null ???
+                decimal lineEndsDuration = (i + 1 == TWords.Count) ? 20 : Math.Floor((TWords[i + 1].Key * 10 - TWords[i - 1].Key * 10) / 2);
+                time = (TWords[i - 1].Value == "$") ? TWords[i - 1].Key * 10 : TWords[i - 1].Key * 10 + lineEndsDuration;
+                decimal bpm = Math.Floor(this.ms2bpm(time, GAP, BPM));
+                usText += "- " + bpm + "\n";
+            }
+            else if (kv.Value == "$")
+            {
                 continue;
-            }
-
-            //    // in end of line: +45 msec
-            //    int timing = (words[i] != null) ? timings[timeIndex] : timings[timeIndex - 1] + 45;
-            //    decimal time = Convert.ToDecimal(timing);
-            //    decimal min = Math.Truncate(time / 6000);
-            //    decimal sec = Math.Truncate((time - min * 6000) / 100);
-            //    decimal msec = Math.Truncate(time - (min * 6000 + sec * 100));
-
-            //    usText += startTag + String.Format("{0:D2}", (int)min) + ":"
-            //            + String.Format("{0:D2}", (int)sec) + "."
-            //            + String.Format("{0:D2}", (int)msec) + endTag;
-
-            if (i + 1 == words.Length && (words[i] == null || words[i] == ""))
-            {
-                timeIndex--;
-            }
-            decimal time = Convert.ToDecimal(timings[timeIndex] * 10);
-            decimal bpm = Math.Floor(this.ms2bpm(time, GAP, BPM));
-            //decimal bpmLength = (Convert.ToDecimal(timings[timeIndex] * 10) - time) / oneBpmInMs;
-
-            if (words[i] != null && words[i] != "")
-            {
-                usText += ": " + bpm + " " + Math.Floor(bpm) + " 0 " + words[i] + "\n";
-                timeIndex++;
             }
             else
             {
-                if (words[i] == "") { timeIndex++; }
-                usText += "- " + bpm + "\n";
+                decimal bpm = Math.Floor(this.ms2bpm(time, GAP, BPM));
+                decimal wordDuration = 20;
+                if (i + 1 < TWords.Count && TWords[i + 1].Key == 0)
+                {
+                    wordDuration = 1;
+                }
+                else if (i + 1 < TWords.Count)
+                {
+                    wordDuration = (TWords[i + 1].Key * 10 - time) / oneBpmInMs;
+                }
+                usText += ": " + bpm + " " + Math.Floor(wordDuration) + " 0 " + kv.Value + "\n";
             }
         }
-        KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
-        KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
-        usText = "#GAP:" + timings[0] + "\n" + usText;
+
+        usText = "#RELATIVE:no\n" + usText;
+        usText = "#GAP:" + GAP + "\n" + usText;
         List<ResourceFile> videos = this.resources.Where(r => r.FileType == "Video").ToList();
         string video = (videos.Count == 0 || videos.Count > 1) ? "" : videos[0].FileName;
         usText = "#VIDEO:" + video + "\n" + usText;
         usText = "#MP3:" + this.GetAudioSourceName() + "\n" + usText;
+        KeyValuePair<string, string> artistProp = this.properties.Where(kv => kv.Key == "Artist").FirstOrDefault();
+        KeyValuePair<string, string> titleProp = this.properties.Where(kv => kv.Key == "Title").FirstOrDefault();
         string artist = artistProp.Value ?? "";
         usText = "#ARTIST:" + artist + "\n" + usText;
         string title = titleProp.Value ?? "";
@@ -714,6 +727,7 @@ public class KFN
         string[] words = { };
         int[] timings = { };
         int lines = 0;
+        
         // remove double spaces
         string iniText = iniBlock.Replace("  ", " ");
         // example 1: Se/a/son tic/ket on
@@ -733,17 +747,21 @@ public class KFN
             {
                 string textLine = texts.Groups[1].Value;
                 bool endLineWithTimeCode = false;
+                //"/_" is end of line(has time code)
                 if (textLine.Length > 1 && textLine[textLine.Length - 2] == '/' && textLine[textLine.Length - 1] == '_')
                 {
                     textLine = textLine.Substring(0, textLine.Length - 2);
                     endLineWithTimeCode = true;
                 }
+                //"se/a/son tic/ket" => "se/a/son /tic/ket"
                 textLine = textLine.Replace(" ", " /");
                 string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
-                // + end of line (besides '_')
+                // + end of line - null (besides "_")
+                //"_" - empty line(has time code)
                 int endLine = (textLine.Length == 1 && textLine[0] == '_') ? 0 : 1;
                 Array.Resize(ref words, words.Length + linewords.Length + endLine);
                 Array.Copy(linewords, 0, words, words.Length - linewords.Length - endLine, linewords.Length);
+                //end of line w/ time code: null => ""
                 if (endLineWithTimeCode) { words[words.Length - 1] = ""; }
                 lines++;
             }
@@ -784,6 +802,101 @@ public class KFN
         Dictionary<string[], int[]> TWords = new Dictionary<string[], int[]>();
         TWords.Add(words, timings);
         return TWords;
+    }
+
+    private List<KeyValuePair<decimal, string>> parseTextFromINI_new(string iniBlock)
+    {
+        this.error = null;
+        Regex textRegex = new Regex(@"^[Tt]ext[0-9]+=(.+)");
+        Regex syncRegex = new Regex(@"^[Ss]ync[0-9]+=([0-9,]+)");
+
+        List<KeyValuePair<decimal, string>> ldata = new List<KeyValuePair<decimal, string>>();
+        int timingsCurPos = 0;
+        int wordsCurPos = 0;
+
+        // remove double spaces
+        string iniText = iniBlock.Replace("  ", " ");
+        // example 1: Se/a/son tic/ket on
+        // example 2: Cos I'm/ your su/per/-he/ro/_
+        // '/' and ' ' is delimiter, '/_\n' is end of line (has time code), '\n' is end of line (no time code)
+        // '/ ' - is delimiter (end of word), has time code
+        // '' - empty line (no time code, skipped in lrc)
+        // '_' - empty line (has time code, skipped in lrc)
+        // time for end of line w/o time code = last time + 45 msec
+        // time for end of line w/ time code = end of line time code
+
+        foreach (string str in iniText.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            Match texts = textRegex.Match(str);
+            Match syncs = syncRegex.Match(str);
+            if (texts.Groups.Count > 1)
+            {
+                string textLine = texts.Groups[1].Value;
+                bool endLineWithTimeCode = false;
+                //"/_" is end of line(has time code)
+                if (textLine.Length > 1 && textLine[textLine.Length - 2] == '/' && textLine[textLine.Length - 1] == '_')
+                {
+                    textLine = textLine.Substring(0, textLine.Length - 2);
+                    endLineWithTimeCode = true;
+                }
+                //"se/a/son tic/ket" => "se/a/son /tic/ket"
+                textLine = textLine.Replace(" ", " /");
+                string[] linewords = textLine.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string word in linewords)
+                {
+                    if (ldata.Count > wordsCurPos)
+                    {
+                        decimal time = ldata[wordsCurPos].Key;
+                        ldata[wordsCurPos++] = new KeyValuePair<decimal, string>(time, word);
+                    }
+                    else
+                    {
+                        ldata.Add(new KeyValuePair<decimal, string>(-1, word));
+                    }
+                }
+                if (endLineWithTimeCode)
+                {
+                    if (ldata.Count > wordsCurPos)
+                    {
+                        decimal time = ldata[wordsCurPos].Key;
+                        ldata[wordsCurPos++] = new KeyValuePair<decimal, string>(time, "$");
+                    }
+                    else
+                    {
+                        ldata.Add(new KeyValuePair<decimal, string>(-1, "$"));
+                    }
+                }
+                //end of line - null
+                if (ldata.Count > wordsCurPos)
+                {
+                    ldata.Insert(wordsCurPos++, new KeyValuePair<decimal, string>(0, null));
+                }
+                else
+                {
+                    ldata.Add(new KeyValuePair<decimal, string>(0, null));
+                }
+            }
+            else if (syncs.Groups.Count > 1)
+            {
+                string songLine = syncs.Groups[1].Value;
+                int[] linetimes = songLine.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.Parse(s)).ToArray();
+                foreach (int time in linetimes)
+                {
+                    if (ldata.Count > timingsCurPos)
+                    {
+                        ldata[timingsCurPos] = new KeyValuePair<decimal, string>((decimal)time, ldata[timingsCurPos].Value);
+                    }
+                    else
+                    {
+                        ldata.Add(new KeyValuePair<decimal, string>((decimal)time, "@"));
+                    }
+                    timingsCurPos++;
+                }
+            }
+        }
+
+        return ldata;
     }
 
     public void ChangeKFN(List<ResourceFile> resources, bool needDecrypt = false)
