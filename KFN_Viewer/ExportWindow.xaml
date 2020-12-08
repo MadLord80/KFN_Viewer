@@ -37,6 +37,8 @@
         <Label x:Name="titleLabel" Content="Title: " HorizontalAlignment="Left" Margin="55,0,0,0" VerticalAlignment="Top" Grid.Row="5"/>
         <Label x:Name="BPMLabel" Content="BPM: " HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Grid.Row="7"/>
         <TextBox x:Name="BPMField" Margin="43,0,0,0" Width="50" TextWrapping="NoWrap" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled" AcceptsReturn="False" AcceptsTab="False" Grid.Column="0" Grid.Row="7" HorizontalAlignment="Left" TextChanged="BPMField_TextChanged"/>
+        <Label x:Name="BPMLimitLabel" Content="(250-550)" HorizontalAlignment="Left" Margin="98,0,0,0" VerticalAlignment="Top" Grid.Row="7"/>
+        <Button x:Name="recalcBPMButton" Content="Recalc BPM" HorizontalAlignment="Left" Margin="168,3,0,0" VerticalAlignment="Top" Width="75" Grid.Row="7" Click="RecalcBPMButton_Click"/>
         <Button x:Name="exportButton" Content="Export" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Top" Width="75" Grid.Row="8" Click="ExportButton_Click"/>
         <CheckBox x:Name="deleteID3Tags" Content="Delete all ID3 tags" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Top" Grid.Row="1" Padding="5,0,0,0"/>
         <Button x:Name="playVideoButton" HorizontalAlignment="Right" Margin="0,0,3,0" VerticalAlignment="Top" Width="27" ToolTip="Play video" Grid.Row="1">

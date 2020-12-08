@@ -141,7 +141,7 @@ namespace KFN_Viewer
 
                 encSelect.ItemsSource = this.encodings;
                 encSelect.DisplayMemberPath = "Value";
-                encSelect.SelectedIndex = 0;
+                encSelect.SelectedIndex = (exportType == "UltraStar") ? 1 : 0;
             }
 
             // VIDEO
@@ -346,14 +346,29 @@ namespace KFN_Viewer
                     int encCode = ((KeyValuePair<int, string>)encSelect.SelectedItem).Key;
                     Encoding lrcEnc = (encCode == 0) ? Encoding.Default : Encoding.GetEncoding(encCode);
                     byte[] lrcData = lrcEnc.GetBytes(lyric);
-                    //byte[] bom = lrcEnc.GetPreamble();
-                    string usFileName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length) + ".txt";
-                    using (FileStream fs = new FileStream(exportFolder + "\\" + usFileName, FileMode.Create, FileAccess.Write))
+                    string usDirName = kfnFile.Name.Substring(0, kfnFile.Name.Length - kfnFile.Extension.Length);
+                    try
                     {
-                        //fs.Write(bom, 0, bom.Length);
+                        Directory.CreateDirectory(exportFolder + "\\" + usDirName);
+                    }
+                    catch (Exception error)
+                    {
+                        System.Windows.MessageBox.Show(error.Message);
+                        return;
+                    }
+
+                    byte[] mp3Data = KFN.GetDataFromResource(audio);
+                    using (FileStream fs = new FileStream(exportFolder + "\\" + usDirName + "\\" + audio.FileName, FileMode.Create, FileAccess.Write))
+                    {
+                        fs.Write(mp3Data, 0, mp3Data.Length);
+                    }
+
+                    string usFileName = usDirName + ".txt";
+                    using (FileStream fs = new FileStream(exportFolder + "\\" + usDirName + "\\" + usFileName, FileMode.Create, FileAccess.Write))
+                    {
                         fs.Write(lrcData, 0, lrcData.Length);
                     }
-                    System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + usFileName);
+                    System.Windows.MessageBox.Show("Export OK: " + exportFolder + "\\" + usDirName);
                 }
             }
         }
@@ -368,8 +383,6 @@ namespace KFN_Viewer
             {
                 BPMField.Text = Regex.Replace(BPMField.Text, @".$", "");
             }
-
-            lyricPreview.Text = Regex.Replace(lyricPreview.Text, @"#BPM:[0-9]+", "#BPM:" + BPMField.Text);
         }
 
         private void VideoSelect_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -389,6 +402,47 @@ namespace KFN_Viewer
                 string audio = (audioSelect.SelectedItem as KFN.ResourceFile).FileName;
                 lyricPreview.Text = Regex.Replace(lyricPreview.Text, @"#MP3:[^\n]*", "#MP3:" + audio);
             }
+        }
+
+        private void RecalcBPMButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Convert.ToDecimal(BPMField.Text) < 250 || Convert.ToDecimal(BPMField.Text) > 550)
+            {
+                System.Windows.MessageBox.Show("BPM must be 250-550!");
+                return;
+            }
+
+            Dictionary<string, string> lyrics = new Dictionary<string, string>();
+            KFN.ResourceFile songIni = KFN.Resources.Where(r => r.FileName == "Song.ini").First();
+            byte[] data = KFN.GetDataFromResource(songIni);
+            string iniText = new string(Encoding.UTF8.GetChars(data));
+            SongINI sINI = new SongINI(iniText);
+            foreach (SongINI.BlockInfo block in sINI.Blocks.Where(b => b.Id == "1" || b.Id == "2"))
+            {
+                string lyricFromBlock = null;
+
+                lyricFromBlock = KFN.INItoUltraStar(block.Content, Convert.ToDecimal(BPMField.Text));
+                if (!lyricFromBlock.Contains("Can`t convert lyric from Song.ini"))
+                {
+                    lyricFromBlock = "#BPM:" + BPMField.Text + "\n" + lyricFromBlock;
+                }
+                if (lyricFromBlock != null)
+                {
+                    lyrics.Add("Song.ini: " + block.Name, lyricFromBlock);
+                }
+                else
+                {
+                    lyrics.Add("Song.ini: " + block.Name, "Can`t convert lyric from Song.ini");
+                }
+            }
+
+            int index = lyricSelect.SelectedIndex;
+            lyricSelect.SelectionChanged -= LyricSelect_SelectionChanged;
+            lyricSelect.ItemsSource = lyrics;
+            lyricSelect.SelectedIndex = index;
+            lyricSelect.SelectionChanged += LyricSelect_SelectionChanged;
+            lyricSelect.Items.Refresh();
+            lyricPreview.Text = ((KeyValuePair<string, string>)lyricSelect.SelectedItem).Value;
         }
     }
 }
