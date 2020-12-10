@@ -363,6 +363,13 @@ namespace KFN_Viewer
                         fs.Write(mp3Data, 0, mp3Data.Length);
                     }
 
+                    KFN.ResourceFile video = (KFN.ResourceFile)videoSelect.SelectedItem;
+                    byte[] videoData = KFN.GetDataFromResource(video);
+                    using (FileStream fs = new FileStream(exportFolder + "\\" + usDirName + "\\" + video.FileName, FileMode.Create, FileAccess.Write))
+                    {
+                        fs.Write(videoData, 0, videoData.Length);
+                    }
+
                     string usFileName = usDirName + ".txt";
                     using (FileStream fs = new FileStream(exportFolder + "\\" + usDirName + "\\" + usFileName, FileMode.Create, FileAccess.Write))
                     {
