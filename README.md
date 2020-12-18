@@ -17,5 +17,7 @@ TODO:
 - [x] delete ID3 lyric (USLT and SYLT)
 - [x] default encoding for lyric
 - [x] lyric with '-' and some symbols without time markers (Maksyuha)
-- [ ] break words into syllables
 - [x] Ария - Штиль: create LRC!!!
+- [ ] break words into syllables
+- [ ] error detection and tags (example, Yass)
+- [ ] add CREATOR tag
