@@ -18,4 +18,5 @@ TODO:
 - [x] default encoding for lyric
 - [x] lyric with '-' and some symbols without time markers (Maksyuha)
 - [ ] break words into syllables
-- [x] Ария - Штиль: create LRC!!!
+- [ ] '_' in words - replace with space
+- [ ] new parse ini to words and timings
