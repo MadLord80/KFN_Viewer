@@ -20,3 +20,6 @@ TODO:
 - [ ] break words into syllables
 - [ ] '_' in words - replace with space
 - [ ] new parse ini to words and timings
+- [ ] multi-convert (KFN -> LRC, LRC -> KFN, etc.)
+- [ ] console utility (decompress, convert)
+- [ ] unlock v1 karafan (gmail, royal group)
