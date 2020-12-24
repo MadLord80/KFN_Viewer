@@ -21,3 +21,5 @@ TODO:
 - [ ] break words into syllables
 - [ ] error detection and tags (example, Yass)
 - [ ] add CREATOR tag
+- [ ] zip, emz
+- [ ] add minus ('+' at the end of music file)
