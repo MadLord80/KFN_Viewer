@@ -17,9 +17,11 @@ TODO:
 - [x] delete ID3 lyric (USLT and SYLT)
 - [x] default encoding for lyric
 - [x] lyric with '-' and some symbols without time markers (Maksyuha)
-- [ ] break words into syllables
+- [ ] KFN for Encore (mp3 + song.ini)
+- [ ] save liryc into mp3 tag "UNSYNCED LYRICS"
 - [ ] '_' in words - replace with space
 - [ ] new parse ini to words and timings
 - [ ] multi-convert (KFN -> LRC, LRC -> KFN, etc.)
 - [ ] console utility (decompress, convert)
 - [ ] unlock v1 karafan (gmail, royal group)
+- [ ] break words into syllables
