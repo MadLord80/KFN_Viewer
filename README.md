@@ -18,7 +18,7 @@ TODO:
 - [x] default encoding for lyric
 - [x] lyric with '-' and some symbols without time markers (Maksyuha)
 - [ ] KFN for Encore (mp3 + song.ini)
-- [ ] save liryc into mp3 tag "UNSYNCED LYRICS"
+- [ ] save lyric into mp3 tag "UNSYNCED LYRICS"
 - [ ] '_' in words - replace with space
 - [ ] new parse ini to words and timings
 - [ ] multi-convert (KFN -> LRC, LRC -> KFN, etc.)
