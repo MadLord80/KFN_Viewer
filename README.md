@@ -21,6 +21,7 @@ TODO:
 - [ ] save lyric into mp3 tag "UNSYNCED LYRICS"
 - [ ] '_' in words - replace with space
 - [ ] new parse ini to words and timings
+- [ ] zipped kfn
 - [ ] multi-convert (KFN -> LRC, LRC -> KFN, etc.)
 - [ ] console utility (decompress, convert)
 - [ ] unlock v1 karafan (gmail, royal group)
