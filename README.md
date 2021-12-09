@@ -17,6 +17,7 @@ TODO:
 - [x] delete ID3 lyric (USLT and SYLT)
 - [x] default encoding for lyric
 - [x] lyric with '-' and some symbols without time markers (Maksyuha)
+- [ ] convert ELYR to LRC
 - [ ] KFN for Encore (mp3 + song.ini)
 - [ ] save lyric into mp3 tag "UNSYNCED LYRICS"
 - [ ] '_' in words - replace with space
